@@ -26,26 +26,27 @@ import (
 	"strings"
 
 	"k8s.io/kubernetes/pkg/api"
+	"k8s.io/kubernetes/pkg/apis/extensions"
 )
 
 type KubernetesBlueprint struct {
-	Id                        int
-	SecretsJson               []string
-	ReplicationControllerJson []string
-	ServiceJson               []string
-	ServiceAcccountJson       []string
-	PersistentVolumeClaim     []string
-	CredentialsMapping        string
-	ReplicaTemplate           string
-	UriTemplate               string
+	Id                    int
+	SecretsJson           []string
+	DeploymentsJson       []string
+	ServiceJson           []string
+	ServiceAcccountJson   []string
+	PersistentVolumeClaim []string
+	CredentialsMapping    string
+	ReplicaTemplate       string
+	UriTemplate           string
 }
 
 type KubernetesComponent struct {
-	PersistentVolumeClaim  []*api.PersistentVolumeClaim
-	ReplicationControllers []*api.ReplicationController
-	Services               []*api.Service
-	ServiceAccounts        []*api.ServiceAccount
-	Secrets                []*api.Secret
+	PersistentVolumeClaim []*api.PersistentVolumeClaim
+	Deployments           []*extensions.Deployment
+	Services              []*api.Service
+	ServiceAccounts       []*api.ServiceAccount
+	Secrets               []*api.Secret
 }
 
 var TEMP_DYNAMIC_BLUEPRINTS = map[string]KubernetesBlueprint{}
@@ -73,11 +74,11 @@ func ParseKubernetesComponent(blueprint KubernetesBlueprint, instanceId, svcMeta
 	}
 	blueprint.SecretsJson = parsedSecrets
 
-	parsedRcs := []string{}
-	for i, rc := range blueprint.ReplicationControllerJson {
-		parsedRcs = append(parsedRcs, adjust_params(rc, org, space, instanceId, svcMetaId, planMetaId, i))
+	parsedDpls := []string{}
+	for i, dpl := range blueprint.DeploymentsJson {
+		parsedDpls = append(parsedDpls, adjust_params(dpl, org, space, instanceId, svcMetaId, planMetaId, i))
 	}
-	blueprint.ReplicationControllerJson = parsedRcs
+	blueprint.DeploymentsJson = parsedDpls
 
 	parsedSvcs := []string{}
 	for i, svc := range blueprint.ServiceJson {
@@ -117,14 +118,14 @@ func CreateKubernetesComponentFromBlueprint(blueprint KubernetesBlueprint) (*Kub
 		result.Secrets = append(result.Secrets, parsedSecret)
 	}
 
-	for _, rc := range blueprint.ReplicationControllerJson {
-		parsedRc := &api.ReplicationController{}
-		err := json.Unmarshal([]byte(rc), parsedRc)
+	for _, dpl := range blueprint.DeploymentsJson {
+		parsedDpl := &extensions.Deployment{}
+		err := json.Unmarshal([]byte(dpl), parsedDpl)
 		if err != nil {
-			logger.Error("[ParseKubernetesComponenets] Unmarshalling replication controller error:", err)
+			logger.Error("[ParseKubernetesComponenets] Unmarshalling deployment error:", err)
 			return result, err
 		}
-		result.ReplicationControllers = append(result.ReplicationControllers, parsedRc)
+		result.Deployments = append(result.Deployments, parsedDpl)
 	}
 
 	for _, svc := range blueprint.ServiceJson {
@@ -167,7 +168,7 @@ func GetKubernetesBlueprintByServiceAndPlan(catalogPath string, svcMeta ServiceM
 
 	result.PersistentVolumeClaim, err = read_k8s_json_files_with_prefix_from_dir(k8s_plan_path, "persistentvolumeclaim")
 	if err != nil {
-		logger.Error("[GetKubernetesBlueprintForServiceAndPlan] Error reading Replication Controller file", err)
+		logger.Error("[GetKubernetesBlueprintForServiceAndPlan] Error reading persistent volume claim file", err)
 		return result, err
 	}
 
@@ -195,11 +196,13 @@ func GetKubernetesBlueprintByServiceAndPlan(catalogPath string, svcMeta ServiceM
 			}
 		}
 	}
-	result.ReplicationControllerJson, err = read_k8s_json_files_with_prefix_from_dir(k8s_plan_path, "replicationcontroller")
+
+	result.DeploymentsJson, err = read_k8s_json_files_with_prefix_from_dir(k8s_plan_path, "deployment")
 	if err != nil {
-		logger.Error("[GetKubernetesBlueprintForServiceAndPlan] Error reading Replication Controller file", err)
+		logger.Error("[GetKubernetesBlueprintForServiceAndPlan] Error reading Deployment file", err)
 		return result, err
 	}
+	logger.Error("Deployments JSON", result.DeploymentsJson)
 
 	result.ServiceJson, err = read_k8s_json_files_with_prefix_from_dir(k8s_plan_path, "service")
 	if err != nil {
