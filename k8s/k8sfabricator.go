@@ -19,10 +19,12 @@ package k8s
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
 	"k8s.io/kubernetes/pkg/api"
+	"k8s.io/kubernetes/pkg/apis/extensions"
 	"k8s.io/kubernetes/pkg/labels"
 	"k8s.io/kubernetes/pkg/util/sets"
 
@@ -44,7 +46,7 @@ type KubernetesApi interface {
 	GetClusterWorkers(creds K8sClusterCredentials) ([]string, error)
 	GetPodsStateByServiceId(creds K8sClusterCredentials, service_id string) ([]PodStatus, error)
 	GetPodsStateForAllServices(creds K8sClusterCredentials) (map[string][]PodStatus, error)
-	ListReplicationControllers(creds K8sClusterCredentials) (*api.ReplicationControllerList, error)
+	ListDeployments(creds K8sClusterCredentials) (*extensions.DeploymentList, error)
 	GetSecret(creds K8sClusterCredentials, key string) (*api.Secret, error)
 	CreateSecret(creds K8sClusterCredentials, secret api.Secret) error
 	DeleteSecret(creds K8sClusterCredentials, key string) error
@@ -123,14 +125,13 @@ func (k *K8Fabricator) FabricateService(creds K8sClusterCredentials, space, cf_s
 		}
 	}
 
-	ss.ReportProgress(cf_service_id, "IN_PROGRESS_CREATING_RCS", nil)
-	for idx, rc := range component.ReplicationControllers {
-		ss.ReportProgress(cf_service_id, "IN_PROGRESS_CREATING_RC"+strconv.Itoa(idx), nil)
-		for i, container := range rc.Spec.Template.Spec.Containers {
-			rc.Spec.Template.Spec.Containers[i].Env = append(container.Env, extraEnvironments...)
+	ss.ReportProgress(cf_service_id, "IN_PROGRESS_CREATING_DPLS", nil)
+	for idx, dpl := range component.Deployments {
+		ss.ReportProgress(cf_service_id, "IN_PROGRESS_CREATING_DPL"+strconv.Itoa(idx), nil)
+		for i, container := range dpl.Spec.Template.Spec.Containers {
+			dpl.Spec.Template.Spec.Containers[i].Env = append(container.Env, extraEnvironments...)
 		}
-
-		_, err = NewReplicationControllerManager(c).Create(rc)
+		_, err = c.Deployments(api.NamespaceDefault).Create(dpl)
 		if err != nil {
 			ss.ReportProgress(cf_service_id, "FAILED", err)
 			return result, err
@@ -230,9 +231,22 @@ func (k *K8Fabricator) DeleteAllByServiceId(creds K8sClusterCredentials, service
 		}
 	}
 
-	if err = NewReplicationControllerManager(c).DeleteAll(selector); err != nil {
-		logger.Error("[DeleteAllByServiceId] Delete replication controller failed:", err)
+	dpls, err := c.Deployments(api.NamespaceDefault).List(api.ListOptions{
+		LabelSelector: selector,
+	})
+	if err != nil {
+		logger.Error("[DeleteAllByServiceId] List deployments failed:", err)
 		return err
+	}
+
+	for _, i := range dpls.Items {
+		name = i.ObjectMeta.Name
+		logger.Debug("[DeleteAllByServiceId] Delete deployment:", name)
+		err = c.Deployments(api.NamespaceDefault).Delete(name, &api.DeleteOptions{})
+		if err != nil {
+			logger.Error("[DeleteAllByServiceId] Delete deployment failed:", err)
+			return err
+		}
 	}
 
 	secrets, err := c.Secrets(api.NamespaceDefault).List(api.ListOptions{
@@ -397,7 +411,7 @@ func (k *K8Fabricator) GetClusterWorkers(creds K8sClusterCredentials) ([]string,
 	return workers, nil
 }
 
-func (k *K8Fabricator) ListReplicationControllers(creds K8sClusterCredentials) (*api.ReplicationControllerList, error) {
+func (k *K8Fabricator) ListDeployments(creds K8sClusterCredentials) (*extensions.DeploymentList, error) {
 	c, err := k.KubernetesClient.GetNewClient(creds)
 	if err != nil {
 		return nil, err
@@ -407,7 +421,9 @@ func (k *K8Fabricator) ListReplicationControllers(creds K8sClusterCredentials) (
 		return nil, err
 	}
 
-	return NewReplicationControllerManager(c).List(selector)
+	return c.Deployments(api.NamespaceDefault).List(api.ListOptions{
+		LabelSelector: selector,
+	})
 }
 
 type PodStatus struct {
@@ -528,8 +544,8 @@ func (k *K8Fabricator) UpdateSecret(creds K8sClusterCredentials, secret api.Secr
 }
 
 type PodEnvs struct {
-	RcName     string
-	Containers []ContainerSimple
+	DeploymentName string
+	Containers     []ContainerSimple
 }
 
 type ContainerSimple struct {
@@ -538,7 +554,7 @@ type ContainerSimple struct {
 }
 
 func (k *K8Fabricator) GetAllPodsEnvsByServiceId(creds K8sClusterCredentials, space, service_id string) ([]PodEnvs, error) {
-	logger.Info("[GetEnvFromReplicationControllerByServiceIdLabel] serviceId:", service_id)
+	logger.Info("[GetAllPodsEnvsByServiceId] serviceId:", service_id)
 	result := []PodEnvs{}
 
 	c, selector, err := k.getKubernetesClientWithServiceIdSelector(creds, service_id)
@@ -546,43 +562,44 @@ func (k *K8Fabricator) GetAllPodsEnvsByServiceId(creds K8sClusterCredentials, sp
 		return result, err
 	}
 
-	rcs, err := NewReplicationControllerManager(c).List(selector)
-
+	dpls, err := c.Deployments(api.NamespaceDefault).List(api.ListOptions{
+		LabelSelector: selector,
+	})
 	if err != nil {
 		return result, err
 	}
-	if len(rcs.Items) < 1 {
-		return result, errors.New("No replication controllers associated with the service: " + service_id)
+	if len(dpls.Items) == 0 {
+		return result, fmt.Errorf("No deployments associated with the service: %s", service_id)
 	}
 
 	secrets, err := c.Secrets(api.NamespaceDefault).List(api.ListOptions{
 		LabelSelector: selector,
 	})
 	if err != nil {
-		logger.Error("[GetEnvFromReplicationControllerByServiceIdLabel] List secrets failed:", err)
+		logger.Error("[GetAllPodsEnvsByServiceId] List secrets failed:", err)
 		return result, err
 	}
 
-	for _, rc := range rcs.Items {
+	for _, dpl := range dpls.Items {
 		pod := PodEnvs{}
-		pod.RcName = rc.Name
+		pod.DeploymentName = dpl.Name
 		pod.Containers = []ContainerSimple{}
 
-		for _, container := range rc.Spec.Template.Spec.Containers {
-			simpelContainer := ContainerSimple{}
-			simpelContainer.Name = container.Name
-			simpelContainer.Envs = map[string]string{}
+		for _, container := range dpl.Spec.Template.Spec.Containers {
+			simpleContainer := ContainerSimple{}
+			simpleContainer.Name = container.Name
+			simpleContainer.Envs = map[string]string{}
 
 			for _, env := range container.Env {
 				if env.Value == "" {
 					logger.Debug("Empty env value, searching env variable in secrets")
-					simpelContainer.Envs[env.Name] = findSecretValue(secrets, envNameToSecretKey(env.Name))
+					simpleContainer.Envs[env.Name] = findSecretValue(secrets, envNameToSecretKey(env.Name))
 				} else {
-					simpelContainer.Envs[env.Name] = env.Value
+					simpleContainer.Envs[env.Name] = env.Value
 				}
 
 			}
-			pod.Containers = append(pod.Containers, simpelContainer)
+			pod.Containers = append(pod.Containers, simpleContainer)
 		}
 		result = append(result, pod)
 	}

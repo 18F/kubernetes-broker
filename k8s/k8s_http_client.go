@@ -34,7 +34,7 @@ import (
 
 // we need this redundant interface to be able to inject TestClient in Test class
 type KubernetesClient interface {
-	ReplicationControllers(namespace string) k8sClient.ReplicationControllerInterface
+	Deployments(namespace string) k8sClient.DeploymentInterface
 	Nodes() k8sClient.NodeInterface
 	Events(namespace string) k8sClient.EventInterface
 	Endpoints(namespace string) k8sClient.EndpointsInterface
@@ -60,7 +60,7 @@ type KubernetesRestCreator struct {
 }
 
 type KubernetesTestCreator struct {
-	testClient *testclient.Fake
+	testClient *testclient.FakeExperimental
 }
 
 var logger = logger_wrapper.InitLogger("k8s")
@@ -111,8 +111,8 @@ func (k *KubernetesTestCreator) GetNewClient(creds K8sClusterCredentials) (Kuber
 	Objects will be returned in provided order
 	All objects should do same action e.g. list/update/create
 */
-func (k *KubernetesTestCreator) LoadSimpleResponsesWithSameAction(responeObjects ...runtime.Object) {
-	k.testClient = testclient.NewSimpleFake(responeObjects...)
+func (k *KubernetesTestCreator) LoadSimpleResponsesWithSameAction(responseObjects ...runtime.Object) {
+	k.testClient = testclient.NewSimpleFakeExp(responseObjects...)
 }
 
 type KubernetesTestAdvancedParams struct {
@@ -125,7 +125,7 @@ type KubernetesTestAdvancedParams struct {
 	This method allow to inject response object dependly of their action
 */
 func (k *KubernetesTestCreator) LoadAdvancedResponses(params []KubernetesTestAdvancedParams) {
-	fakeClient := &testclient.Fake{}
+	fakeClient := &testclient.FakeExperimental{}
 
 	for _, param := range params {
 		o := testclient.NewObjects(api.Scheme, api.Codecs.UniversalDecoder())
