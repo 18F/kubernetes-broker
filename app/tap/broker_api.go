@@ -597,10 +597,12 @@ func getServiceCredentials(creds k8s.K8sClusterCredentials, org, serviceId strin
 		return result, errors.New("No services associated with the serviceId: " + serviceId)
 	}
 
+	host := strings.Split(creds.Server, ":")[0]
+
 	for _, svc := range services {
 		svcCred := ServiceCredential{}
 		svcCred.Name = svc.Name
-		svcCred.Host = getServiceInternalHostByFirstTCPPort(svc)
+		svcCred.Host = host
 
 		for _, p := range svc.Spec.Ports {
 			svcCred.Ports = append(svcCred.Ports, p)
