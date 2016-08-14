@@ -15,64 +15,21 @@
  */
 package k8s
 
-import (
-	"net/http"
+type K8sClusterCredentials struct {
+	ClusterName    string `json:"cluster_name" mapstructure:"cluster_name"`
+	Server         string `json:"api_server" mapstructure:"api_server"`
+	Username       string `json:"username" mapstructure:"username"`
+	Password       string `json:"password" mapstructure:"password"`
+	CaCert         string `json:"ca_cert" mapstructure:"ca_cert"`
+	AdminKey       string `json:"admin_key" mapstructure:"admin_key"`
+	AdminCert      string `json:"admin_cert" mapstructure:"admin_cert"`
+	ConsulEndpoint string `json:"consul_http_api" mapstructure:"consul_http_api"`
+}
 
-	brokerHttp "github.com/trustedanalytics/kubernetes-broker/http"
-)
-
-type K8sCreatorRest interface {
+type K8sConnector interface {
 	DeleteCluster(org string) error
 	GetCluster(org string) (int, K8sClusterCredentials, error)
 	GetOrCreateCluster(org string) (K8sClusterCredentials, error)
 	PostCluster(org string) (int, error)
 	GetClusters() ([]K8sClusterCredentials, error)
-}
-
-type K8sCreatorConnector struct {
-	ApiVersion       string
-	Server           string
-	Username         string
-	Password         string
-	Client           *http.Client
-	OrgQuota         int
-	KubernetesClient KubernetesClientCreator
-}
-
-type K8sClusterCredentials struct {
-	CLusterName    string `json:"cluster_name"`
-	Server         string `json:"api_server"`
-	Username       string `json:"username"`
-	Password       string `json:"password"`
-	CaCert         string `json:"ca_cert"`
-	AdminKey       string `json:"admin_key"`
-	AdminCert      string `json:"admin_cert"`
-	ConsulEndpoint string `json:"consul_http_api"`
-}
-
-func NewK8sCreatorConnector(server, user, pass string, maxOrgQuota int) *K8sCreatorConnector {
-	clientCreator, _, err := brokerHttp.GetHttpClientWithBasicAuth()
-	if err != nil {
-		logger.Panic("Can't get http client!", err)
-	}
-
-	return &K8sCreatorConnector{
-		Server:           server,
-		Username:         user,
-		Password:         pass,
-		Client:           clientCreator,
-		OrgQuota:         maxOrgQuota,
-		KubernetesClient: &KubernetesRestCreator{},
-	}
-}
-
-func (k *K8sCreatorConnector) IsApiWorking(credential K8sClusterCredentials) bool {
-	req_url := credential.Server + "/api/v1"
-	statusCde, _, err := brokerHttp.RestGET(req_url, &brokerHttp.BasicAuth{credential.Username, credential.Password}, k.Client)
-
-	if err != nil {
-		logger.Error("[IsApiWorking] Error: ", err)
-		return false
-	}
-	return statusCde == 200
 }

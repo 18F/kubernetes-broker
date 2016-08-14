@@ -43,7 +43,7 @@ type BrokerConfig struct {
 	CloudProvider                         CloudApi
 	StateService                          state.StateService
 	KubernetesApi                         k8s.KubernetesApi
-	CreatorConnector                      k8s.K8sCreatorRest
+	CreatorConnector                      k8s.K8sConnector
 	ConsulApi                             consul.ConsulService
 }
 

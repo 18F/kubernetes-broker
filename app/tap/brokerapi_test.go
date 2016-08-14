@@ -57,12 +57,12 @@ const URLserviceBindingsPath = "/v2/service_instances/:instance_id/service_bindi
 var testCatalogPath = tst.GetTestCatalogPath("/app/tap")
 var testError error = errors.New("New Errror")
 var testCreds k8s.K8sClusterCredentials = k8s.K8sClusterCredentials{
-	CLusterName: tst.TestOrgHost,
+	ClusterName: tst.TestOrgHost,
 	Server:      tst.TestOrgHost,
 }
 
 func prepareMocksAndRouter(t *testing.T) (r *web.Router, mockCloudAPi *MockCloudApi, mockKubernetesApi *k8s.MockKubernetesApi,
-	mockStateService *state.MockStateService, mockCreatorConnector *k8s.MockK8sCreatorRest, consulMockService *consul.MockConsulService) {
+	mockStateService *state.MockStateService, mockCreatorConnector *k8s.MockK8sConnector, consulMockService *consul.MockConsulService) {
 
 	// setup Catalog for example test files
 	catalog.CatalogPath = testCatalogPath
@@ -72,7 +72,7 @@ func prepareMocksAndRouter(t *testing.T) (r *web.Router, mockCloudAPi *MockCloud
 	mockCloudAPi = NewMockCloudApi(mockCtrl)
 	mockKubernetesApi = k8s.NewMockKubernetesApi(mockCtrl)
 	mockStateService = state.NewMockStateService(mockCtrl)
-	mockCreatorConnector = k8s.NewMockK8sCreatorRest(mockCtrl)
+	mockCreatorConnector = k8s.NewMockK8sConnector(mockCtrl)
 	consulMockService = consul.NewMockConsulService(mockCtrl)
 
 	brokerConfig = &BrokerConfig{

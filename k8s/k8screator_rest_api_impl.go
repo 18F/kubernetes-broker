@@ -23,11 +23,50 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+
 	"github.com/cloudfoundry-community/go-cfenv"
 	brokerHttp "github.com/trustedanalytics/kubernetes-broker/http"
 	"k8s.io/kubernetes/pkg/api"
 	"time"
 )
+
+type K8sCreatorConnector struct {
+	ApiVersion       string
+	Server           string
+	Username         string
+	Password         string
+	Client           *http.Client
+	OrgQuota         int
+	KubernetesClient KubernetesClientCreator
+}
+
+func NewK8sCreatorConnector(server, user, pass string, maxOrgQuota int) *K8sCreatorConnector {
+	clientCreator, _, err := brokerHttp.GetHttpClientWithBasicAuth()
+	if err != nil {
+		logger.Panic("Can't get http client!", err)
+	}
+
+	return &K8sCreatorConnector{
+		Server:           server,
+		Username:         user,
+		Password:         pass,
+		Client:           clientCreator,
+		OrgQuota:         maxOrgQuota,
+		KubernetesClient: &KubernetesRestCreator{},
+	}
+}
+
+func (k *K8sCreatorConnector) IsApiWorking(credential K8sClusterCredentials) bool {
+	req_url := credential.Server + "/api/v1"
+	statusCde, _, err := brokerHttp.RestGET(req_url, &brokerHttp.BasicAuth{credential.Username, credential.Password}, k.Client)
+
+	if err != nil {
+		logger.Error("[IsApiWorking] Error: ", err)
+		return false
+	}
+	return statusCde == 200
+}
 
 func (k *K8sCreatorConnector) DeleteCluster(org string) error {
 	status, _, err := brokerHttp.RestDELETE(k.Server+"/clusters/"+org, "", &brokerHttp.BasicAuth{k.Username, k.Password}, k.Client)

@@ -25,6 +25,7 @@ import (
 
 	"github.com/cloudfoundry-community/go-cfenv"
 	"github.com/gocraft/web"
+	"github.com/mitchellh/mapstructure"
 
 	"github.com/trustedanalytics/kubernetes-broker/catalog"
 	"github.com/trustedanalytics/kubernetes-broker/consul"
@@ -123,16 +124,29 @@ func initServices(cfApp *cfenv.App) {
 	if err != nil {
 		logger.Fatal("kubernetes-creator-credentials service can't be found!", err)
 	}
-	maxOrgsNo, err := strconv.Atoi(cfenv.CurrentEnv()["MAX_ORG_QUOTA"])
-	if err != nil {
-		logger.Fatal("MAX_ORG_QUOTA env not set or incorrect: " + err.Error())
+
+	switch kubeCreds.Credentials["type"] {
+	case "rest":
+		maxOrgsNo, err := strconv.Atoi(cfenv.CurrentEnv()["MAX_ORG_QUOTA"])
+		if err != nil {
+			logger.Fatal("MAX_ORG_QUOTA env not set or incorrect: " + err.Error())
+		}
+		brokerConfig.CreatorConnector = k8s.NewK8sCreatorConnector(
+			kubeCreds.Credentials["url"].(string),
+			kubeCreds.Credentials["username"].(string),
+			kubeCreds.Credentials["password"].(string),
+			maxOrgsNo,
+		)
+	case "static":
+		creds := k8s.K8sClusterCredentials{}
+		err = mapstructure.Decode(kubeCreds.Credentials, &creds)
+		if err != nil {
+			logger.Fatal("Could not decode cluster credentials")
+		}
+		brokerConfig.CreatorConnector = k8s.NewK8sStaticConnector(creds)
+	default:
+		logger.Fatalf(`Unknown connector type "%s"`, kubeCreds.Credentials["type"])
 	}
-	brokerConfig.CreatorConnector = k8s.NewK8sCreatorConnector(
-		kubeCreds.Credentials["url"].(string),
-		kubeCreds.Credentials["username"].(string),
-		kubeCreds.Credentials["password"].(string),
-		maxOrgsNo,
-	)
 
 	brokerConfig.StateService = &state.StateMemoryService{}
 	brokerConfig.KubernetesApi = k8s.NewK8Fabricator()
@@ -157,6 +171,6 @@ func removeNotUsedClusters() {
 		return
 	}
 	for _, cluster := range clusters {
-		go removeCluster(cluster, cluster.CLusterName)
+		go removeCluster(cluster, cluster.ClusterName)
 	}
 }

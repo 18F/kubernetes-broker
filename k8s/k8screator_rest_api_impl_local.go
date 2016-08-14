@@ -25,7 +25,7 @@ import (
 func (k *K8sCreatorConnector) GetDefaultCluster() K8sClusterCredentials {
 	k8sCreatorPostClusterResponse := K8sClusterCredentials{}
 	k8sCreatorPostClusterResponse.Server = k.GetLocalAddress()
-	k8sCreatorPostClusterResponse.CLusterName = "test-doc"
+	k8sCreatorPostClusterResponse.ClusterName = "test-doc"
 	k8sCreatorPostClusterResponse.Username = ""
 	k8sCreatorPostClusterResponse.AdminCert = os.Getenv("KUBERNETES_CERT_PEM_STRING")
 	k8sCreatorPostClusterResponse.AdminKey = os.Getenv("KUBERNETES_KEY_PEM_STRING")
