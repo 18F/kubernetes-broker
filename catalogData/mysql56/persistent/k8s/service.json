@@ -20,14 +20,8 @@
     },
     "ports": [
       {
-        "port": 27017,
-        "protocol": "TCP",
-        "name":"client"
-      },
-      {
-        "port": 28017,
-        "protocol": "TCP",
-        "name":"admin"
+        "port": 3306,
+        "protocol": "TCP"
       }
     ]
   }
