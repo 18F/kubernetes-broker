@@ -3,12 +3,11 @@ applications:
 - name: kubernetes-broker
   memory: 256M
   instances: 1
-  path: .
-  command: ./application/kubernetes-broker
-  buildpack: https://github.com/cloudfoundry/binary-buildpack.git
+  command: tap
+  buildpack: https://github.com/jmcarp/go-buildpack.git
   services:
-    - sso
-    - kubernetes-creator-credentials
+  - sso
+  - kubernetes-creator-credentials
   env:
     VERSION: "0.8.17"
     AUTH_USER: admin
@@ -24,3 +23,5 @@ applications:
     KUBE_SSL_ACTIVE: false
     WAIT_BEFORE_NEXT_PV_CHECK_SEC: 120
     WAIT_BEFORE_REMOVE_CLUSTER_SEC: 3600
+    GOPACKAGENAME: github.com/trustedanalytics/kubernetes-broker
+    GO_INSTALL_PACKAGE_SPEC: ./app/tap
