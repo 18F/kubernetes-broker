@@ -21,6 +21,7 @@ applications:
     KUBE_REPO_URL: ""
     KUBE_REPO_MAIL: ""
     KUBE_SSL_ACTIVE: false
+    KUBE_ADDRESS_PARSER: service
     WAIT_BEFORE_NEXT_PV_CHECK_SEC: 120
     WAIT_BEFORE_REMOVE_CLUSTER_SEC: 3600
     GOPACKAGENAME: github.com/trustedanalytics/kubernetes-broker

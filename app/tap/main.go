@@ -19,6 +19,7 @@ package main
 import (
 	"math/rand"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -146,6 +147,15 @@ func initServices(cfApp *cfenv.App) {
 		brokerConfig.CreatorConnector = k8s.NewK8sStaticConnector(creds)
 	default:
 		logger.Fatalf(`Unknown connector type "%s"`, kubeCreds.Credentials["type"])
+	}
+
+	switch os.Getenv("KUBE_ADDRESS_PARSER") {
+	case "consul":
+		addressParser = ConsulAddressParser{}
+	case "service":
+		addressParser = ServiceAddressParser{}
+	default:
+		logger.Fatalf(`Unknown address parser "%s"`, os.Getenv("KUBE_ADDRESS_PARSER"))
 	}
 
 	brokerConfig.StateService = &state.StateMemoryService{}

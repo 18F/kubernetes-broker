@@ -22,8 +22,6 @@ import (
 	"strconv"
 	"strings"
 
-	"k8s.io/kubernetes/pkg/api"
-
 	"github.com/trustedanalytics/kubernetes-broker/catalog"
 	"github.com/trustedanalytics/kubernetes-broker/k8s"
 )
@@ -65,7 +63,7 @@ func parseSvcCredsForClusteredPlan(replicaTemplate string, credentialsMapping st
 
 		templateToParse = strings.Replace(templateToParse, "$hostname", svc.Host, -1)
 		templateToParse = strings.Replace(templateToParse, "$nodeName", svc.Name, -1)
-		templateToParse, err = parsePorts(templateToParse, svc.Ports)
+		templateToParse, err = parsePorts(templateToParse, svc)
 		if err != nil {
 			return "", err
 		}
@@ -82,7 +80,7 @@ func parseUriClusteredPlan(uriTemplate string, credentialsMapping string, svcCre
 	//build host:port for all services
 	for _, svc := range svcCreds {
 
-		port, err := getPort(uriTemplate, svc.Ports)
+		port, err := getPort(uriTemplate, svc)
 		if err != nil {
 			return "", err
 		}
@@ -107,7 +105,7 @@ func parseSvcCredsForSimplePlan(templateToParse string, svcCreds []ServiceCreden
 	//TODO we should refactor all our credentialmapping.json in simple plans because they don't support more then 1 service
 	for _, svc := range svcCreds {
 		templateToParse = strings.Replace(templateToParse, "$hostname", svc.Host, -1)
-		templateToParse, err = parsePorts(templateToParse, svc.Ports)
+		templateToParse, err = parsePorts(templateToParse, svc)
 		if err != nil {
 			return "", err
 		}
@@ -137,12 +135,12 @@ func parseEnvs(templateToParse string, pods []k8s.PodEnvs) string {
 	return templateToParse
 }
 
-func parsePorts(templateToParse string, ports []api.ServicePort) (string, error) {
+func parsePorts(templateToParse string, svc ServiceCredential) (string, error) {
 	parsed_ports_list := splitPortsFromTemplate(templateToParse)
 	logger.Debug("$port_ variables: ", parsed_ports_list)
 
 	for _, parsed_port := range parsed_ports_list {
-		port, err := getPort(templateToParse, ports)
+		port, err := getPort(templateToParse, svc)
 		if err != nil {
 			return "", err
 		}
@@ -152,7 +150,7 @@ func parsePorts(templateToParse string, ports []api.ServicePort) (string, error)
 	return templateToParse, nil
 }
 
-func getPort(templateToParse string, ports []api.ServicePort) (string, error) {
+func getPort(templateToParse string, svc ServiceCredential) (string, error) {
 	parsed_ports_list := splitPortsFromTemplate(templateToParse)
 
 	for _, parsed_port := range parsed_ports_list {
@@ -164,13 +162,13 @@ func getPort(templateToParse string, ports []api.ServicePort) (string, error) {
 		if err != nil {
 			return "", errors.New("Parsing error: Port value has incorrect fromat " + expected_port_num_strs[1])
 		}
-		for _, p := range ports {
+		for _, p := range svc.Service.Spec.Ports {
 			target_port_int, err := strconv.Atoi(p.TargetPort.String())
 			if err != nil {
 				return "", errors.New("Parsing error: TargetPort value has incorrect fromat " + p.TargetPort.String())
 			}
 			if target_port_int == expected_port_num_int {
-				return strconv.Itoa(p.NodePort), nil
+				return strconv.Itoa(int(addressParser.ParsePort(svc.Service, p))), nil
 			}
 		}
 	}
