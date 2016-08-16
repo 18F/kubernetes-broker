@@ -242,9 +242,43 @@ func (k *K8Fabricator) DeleteAllByServiceId(creds K8sClusterCredentials, service
 	for _, i := range dpls.Items {
 		name = i.ObjectMeta.Name
 		logger.Debug("[DeleteAllByServiceId] Delete deployment:", name)
-		err = c.Deployments(api.NamespaceDefault).Delete(name, &api.DeleteOptions{})
+
+		orphan := false
+		opts := api.DeleteOptions{OrphanDependents: &orphan}
+		err = c.Deployments(api.NamespaceDefault).Delete(name, &opts)
 		if err != nil {
 			logger.Error("[DeleteAllByServiceId] Delete deployment failed:", err)
+			return err
+		}
+	}
+
+	// TODO: Delete after k8s garbage collection is released
+	rss, err := c.ReplicaSets(api.NamespaceDefault).List(api.ListOptions{
+		LabelSelector: selector,
+	})
+	if err != nil {
+		logger.Error("[DeleteAllByServiceId] List replica sets failed:", err)
+		return err
+	}
+
+	for _, i := range rss.Items {
+		name = i.ObjectMeta.Name
+		logger.Debug("[DeleteAllByServiceId] Delete replica set:", name)
+
+		dpl, err := c.ReplicaSets(api.NamespaceDefault).Get(name)
+		if err != nil {
+			return err
+		}
+
+		dpl.Spec.Replicas = 0
+		_, err = c.ReplicaSets(api.NamespaceDefault).Update(dpl)
+		if err != nil {
+			return err
+		}
+
+		err = c.ReplicaSets(api.NamespaceDefault).Delete(name, &api.DeleteOptions{})
+		if err != nil {
+			logger.Error("[DeleteAllByServiceId] Delete replica set failed:", err)
 			return err
 		}
 	}

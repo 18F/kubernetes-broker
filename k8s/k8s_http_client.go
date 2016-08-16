@@ -35,6 +35,7 @@ import (
 // we need this redundant interface to be able to inject TestClient in Test class
 type KubernetesClient interface {
 	Deployments(namespace string) k8sClient.DeploymentInterface
+	ReplicaSets(namespace string) k8sClient.ReplicaSetInterface
 	Nodes() k8sClient.NodeInterface
 	Events(namespace string) k8sClient.EventInterface
 	Endpoints(namespace string) k8sClient.EndpointsInterface

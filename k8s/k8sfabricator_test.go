@@ -391,9 +391,8 @@ func TestDeleteSecret(t *testing.T) {
 }
 
 func getErrorResponseForSpecificResource(resourceName string) runtime.Object {
+	status := k8sErrors.NewForbidden(api.Resource(resourceName), "", nil).Status()
 	return &api.List{
-		Items: []runtime.Object{
-			&(k8sErrors.NewForbidden(api.Resource(resourceName), "", nil).(*k8sErrors.StatusError).ErrStatus),
-		},
+		Items: []runtime.Object{&status},
 	}
 }
