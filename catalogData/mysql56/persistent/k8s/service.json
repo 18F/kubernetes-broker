@@ -14,7 +14,7 @@
     }
   },
   "spec": {
-    "type": "NodePort",
+    "type": "LoadBalancer",
     "selector": {
       "service_id": "$service_id"
     },
