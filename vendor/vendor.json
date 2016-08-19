@@ -354,16 +354,16 @@
 			"revisionTime": "2016-08-01T16:37:41Z"
 		},
 		{
+			"checksumSHA1": "rmRybNo7xbSUOynk9+PbH2sL1Fs=",
+			"path": "github.com/kelseyhightower/envconfig",
+			"revision": "1e291572dcb9ba673cdcdb15e0f422702415ebaf",
+			"revisionTime": "2016-08-19T16:58:30Z"
+		},
+		{
 			"checksumSHA1": "Q2vw4HZBbnU8BLFt8VrzStwqSJg=",
 			"path": "github.com/matttproud/golang_protobuf_extensions/pbutil",
 			"revision": "d0c3fe89de86839aecf2e0579c40ba3bb336a453",
 			"revisionTime": "2015-10-11T10:25:29Z"
-		},
-		{
-			"checksumSHA1": "KCJhN9Dx329wAN/SeL4CxeypPyk=",
-			"path": "github.com/mitchellh/mapstructure",
-			"revision": "d2dd0262208475919e1a362f675cfc0e7c10e905",
-			"revisionTime": "2016-02-12T03:18:39Z"
 		},
 		{
 			"checksumSHA1": "gcLub3oB+u4QrOJZcYmk/y2AP4k=",
