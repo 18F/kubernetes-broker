@@ -41,6 +41,13 @@ type K8sCreatorConnector struct {
 	KubernetesClient KubernetesClientCreator
 }
 
+type K8sCreatorConnectorCredentials struct {
+	URL         string `envconfig:"connector_url" required:"true"`
+	Username    string `envconfig:"connector_username" required:"true"`
+	Password    string `envconfig:"connector_password" required:"true"`
+	MaxOrgQuota int    `envconfig:"max_org_quota" required:"true"`
+}
+
 func NewK8sCreatorConnector(server, user, pass string, maxOrgQuota int) *K8sCreatorConnector {
 	clientCreator, _, err := brokerHttp.GetHttpClientWithBasicAuth()
 	if err != nil {

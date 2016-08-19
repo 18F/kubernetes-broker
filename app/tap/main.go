@@ -26,7 +26,7 @@ import (
 
 	"github.com/cloudfoundry-community/go-cfenv"
 	"github.com/gocraft/web"
-	"github.com/mitchellh/mapstructure"
+	"github.com/kelseyhightower/envconfig"
 
 	"github.com/trustedanalytics/kubernetes-broker/catalog"
 	"github.com/trustedanalytics/kubernetes-broker/consul"
@@ -109,44 +109,41 @@ func initServices(cfApp *cfenv.App) {
 	}
 	brokerConfig.Domain = serviceDomain
 
-	sso, err := cfApp.Services.WithName("sso")
+	sso := CFAPICredentials{}
+	err := envconfig.Process("cf", &sso)
 	if err != nil {
-		logger.Fatal("SSO service can't be found!", err)
+		logger.Fatalf("Invalid SSO settings: %s", err.Error())
 	}
 	brokerConfig.CloudProvider = NewCFApiClient(
-		sso.Credentials["clientId"].(string),
-		sso.Credentials["clientSecret"].(string),
-		sso.Credentials["tokenUri"].(string),
-		sso.Credentials["apiEndpoint"].(string),
+		sso.ClientID,
+		sso.ClientSecret,
+		sso.TokenURL,
+		sso.APIEndpoint,
 	)
-	TokenKeyURL = sso.Credentials["tokenKey"].(string)
+	TokenKeyURL = sso.TokenKey
 
-	kubeCreds, err := cfApp.Services.WithName("kubernetes-creator-credentials")
-	if err != nil {
-		logger.Fatal("kubernetes-creator-credentials service can't be found!", err)
-	}
-
-	switch kubeCreds.Credentials["type"] {
+	switch os.Getenv("CONNECTOR_TYPE") {
 	case "rest":
-		maxOrgsNo, err := strconv.Atoi(cfenv.CurrentEnv()["MAX_ORG_QUOTA"])
+		creds := k8s.K8sCreatorConnectorCredentials{}
+		err = envconfig.Process("cluster", &creds)
 		if err != nil {
-			logger.Fatal("MAX_ORG_QUOTA env not set or incorrect: " + err.Error())
+			logger.Fatalf("Invalid connector settings: %s", err.Error())
 		}
 		brokerConfig.CreatorConnector = k8s.NewK8sCreatorConnector(
-			kubeCreds.Credentials["url"].(string),
-			kubeCreds.Credentials["username"].(string),
-			kubeCreds.Credentials["password"].(string),
-			maxOrgsNo,
+			creds.URL,
+			creds.Username,
+			creds.Password,
+			creds.MaxOrgQuota,
 		)
 	case "static":
 		creds := k8s.K8sClusterCredentials{}
-		err = mapstructure.Decode(kubeCreds.Credentials, &creds)
+		err = envconfig.Process("cluster", &creds)
 		if err != nil {
-			logger.Fatal("Could not decode cluster credentials")
+			logger.Fatalf("Invalid connector settings: %s", err.Error())
 		}
 		brokerConfig.CreatorConnector = k8s.NewK8sStaticConnector(creds)
 	default:
-		logger.Fatalf(`Unknown connector type "%s"`, kubeCreds.Credentials["type"])
+		logger.Fatalf(`Unknown connector type "%s"`, os.Getenv("CONNECTOR_TYPE"))
 	}
 
 	switch os.Getenv("KUBE_ADDRESS_PARSER") {

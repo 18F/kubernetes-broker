@@ -47,6 +47,14 @@ type CfApi struct {
 	client       *http.Client
 }
 
+type CFAPICredentials struct {
+	ClientID     string `envconfig:"client_id" required:"true"`
+	ClientSecret string `envconfig:"client_secret" required:"true"`
+	TokenURL     string `envconfig:"token_url" required:"true"`
+	APIEndpoint  string `envconfig:"api_endpoint" required:"true"`
+	TokenKey     string `envconfig:"token_key" required:"true"`
+}
+
 func NewCFApiClient(ClientID, ClientSecret, TokenURL, Endpoint string) *CfApi {
 	client, baseurl, err := cfApiClientAndUrl(ClientID, ClientSecret, TokenURL, Endpoint)
 	if err != nil {
