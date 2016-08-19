@@ -5,9 +5,6 @@ applications:
   instances: 1
   command: tap
   buildpack: https://github.com/jmcarp/go-buildpack.git
-  services:
-  - sso
-  - kubernetes-creator-credentials
 env:
   VERSION: "0.8.17"
   AUTH_USER: admin

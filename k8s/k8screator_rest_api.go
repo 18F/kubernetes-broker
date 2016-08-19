@@ -16,14 +16,14 @@
 package k8s
 
 type K8sClusterCredentials struct {
-	ClusterName    string `json:"cluster_name" mapstructure:"cluster_name"`
-	Server         string `json:"api_server" mapstructure:"api_server"`
-	Username       string `json:"username" mapstructure:"username"`
-	Password       string `json:"password" mapstructure:"password"`
-	CaCert         string `json:"ca_cert" mapstructure:"ca_cert"`
-	AdminKey       string `json:"admin_key" mapstructure:"admin_key"`
-	AdminCert      string `json:"admin_cert" mapstructure:"admin_cert"`
-	ConsulEndpoint string `json:"consul_http_api" mapstructure:"consul_http_api"`
+	ClusterName    string `json:"cluster_name" envconfig:"name"`
+	Server         string `json:"api_server" envconfig:"api_server"`
+	Username       string `json:"username" envconfig:"username"`
+	Password       string `json:"password" envconfig:"password"`
+	CaCert         string `json:"ca_cert" envconfig:"ca_cert"`
+	AdminKey       string `json:"admin_key" envconfig:"admin_key"`
+	AdminCert      string `json:"admin_cert" envconfig:"admin_cert"`
+	ConsulEndpoint string `json:"consul_http_api" envconfig:"consul_http_api"`
 }
 
 type K8sConnector interface {
