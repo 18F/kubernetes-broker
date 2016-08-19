@@ -15,6 +15,7 @@
   },
   "spec": {
     "type": "LoadBalancer",
+    "loadBalancerSourceRanges": ["10.9.0.0/16"],
     "selector": {
       "service_id": "$service_id"
     },
