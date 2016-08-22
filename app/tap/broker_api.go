@@ -579,19 +579,15 @@ func (ConsulAddressParser) ParsePort(_ api.Service, port api.ServicePort) int32 
 type ServiceAddressParser struct{}
 
 func (ServiceAddressParser) ParseHost(service api.Service, creds k8s.K8sClusterCredentials) string {
-	if len(service.Status.LoadBalancer.Ingress) > 0 {
-		for _, ingress := range service.Status.LoadBalancer.Ingress {
-			if ingress.IP != "" {
-				return ingress.IP
-			}
-			return ingress.Hostname
-		}
+	if service.Spec.Type == "LoadBalancer" {
+		host, _ := k8s.GetFirstLoadBalancerHost(service)
+		return host
 	}
 	return strings.Split(creds.Server, ":")[0]
 }
 
 func (ServiceAddressParser) ParsePort(service api.Service, port api.ServicePort) int32 {
-	if len(service.Status.LoadBalancer.Ingress) > 0 {
+	if service.Spec.Type == "LoadBalancer" {
 		return port.Port
 	}
 	return port.NodePort
