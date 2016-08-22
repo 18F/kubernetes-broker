@@ -55,16 +55,14 @@ func CreateDynamicService(dynamicService DynamicService) (KubernetesBlueprint, P
 		return result, plan, service, err
 	}
 
-	blueprintTemplate, err := GetKubernetesBlueprintByServiceAndPlan(
-		templateCatalogPath,
-		ServiceMetadata{InternalId: templateServiceMetaInternalId},
-		PlanMetadata{InternalId: templatePlanMetaInternalId},
+	blueprintTemplate, err := GetKubernetesBlueprint(
+		templateCatalogPath, templateServiceMetaInternalId, templatePlanMetaInternalId, "",
 	)
 	if err != nil {
 		return result, plan, service, err
 	}
 
-	componentTemplate, err := CreateKubernetesComponentFromBlueprint(blueprintTemplate)
+	componentTemplate, err := CreateKubernetesComponentFromBlueprint(blueprintTemplate, false)
 	if err != nil {
 		return result, plan, service, err
 	}
@@ -138,11 +136,11 @@ func getDynamicServiceMetadata(dynamicService DynamicService, plan PlanMetadata)
 
 func getParsedKubernetesBlueprint(componentTemplate KubernetesComponent, blueprintTemplate KubernetesBlueprint, dynamicService DynamicService) (KubernetesBlueprint, error) {
 	result := KubernetesBlueprint{}
-	rcJson, err := getParsedDeploymentJson(*componentTemplate.Deployments[0], dynamicService.Containers)
+	deploymentJson, err := getParsedDeploymentJson(*componentTemplate.Deployments[0], dynamicService.Containers)
 	if err != nil {
 		return result, err
 	}
-	result.DeploymentsJson = append(result.DeploymentsJson, rcJson)
+	result.DeploymentJson = append(result.DeploymentJson, deploymentJson)
 
 	serviceJson, err := getParsedServiceJson(*componentTemplate.Services[0], dynamicService.ServicePorts)
 	if err != nil {
@@ -164,12 +162,12 @@ func getParsedKubernetesBlueprint(componentTemplate KubernetesComponent, bluepri
 
 func getParsedDeploymentJson(template extensions.Deployment, containersToParse []api.Container) (string, error) {
 	template.Spec.Template.Spec.Containers = getParsedContainers(template.Spec.Template.Spec.Containers[0], containersToParse)
-	jsonRc, err := json.Marshal(template)
+	jsonDeployment, err := json.Marshal(template)
 	if err != nil {
-		logger.Error("[getParsedDeploymentJson] Marshaling deployment error!", err)
+		logger.Error("Marshaling deployment error!", err)
 		return "", err
 	}
-	return string(jsonRc), nil
+	return string(jsonDeployment), nil
 }
 
 func getParsedContainers(template api.Container, conteinersToParse []api.Container) []api.Container {

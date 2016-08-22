@@ -32,7 +32,7 @@ import (
 type KubernetesBlueprint struct {
 	Id                    int
 	SecretsJson           []string
-	DeploymentsJson       []string
+	DeploymentJson        []string
 	ServiceJson           []string
 	ServiceAcccountJson   []string
 	PersistentVolumeClaim []string
@@ -42,18 +42,27 @@ type KubernetesBlueprint struct {
 }
 
 type KubernetesComponent struct {
-	PersistentVolumeClaim []*api.PersistentVolumeClaim
-	Deployments           []*extensions.Deployment
-	Services              []*api.Service
-	ServiceAccounts       []*api.ServiceAccount
-	Secrets               []*api.Secret
+	PersistentVolumeClaims []*api.PersistentVolumeClaim `json:"persistentVolumeClaims"`
+	Deployments            []*extensions.Deployment     `json:"deployments"`
+	Services               []*api.Service               `json:"services"`
+	ServiceAccounts        []*api.ServiceAccount        `json:"serviceAccounts"`
+	Secrets                []*api.Secret                `json:"secrets"`
 }
 
 var TEMP_DYNAMIC_BLUEPRINTS = map[string]KubernetesBlueprint{}
 var possible_rand_chars = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
 
-func GetParsedKubernetesComponent(catalogPath, instanceId, org, space string, svcMeta ServiceMetadata, planMeta PlanMetadata) (*KubernetesComponent, error) {
-	blueprint, err := GetKubernetesBlueprintByServiceAndPlan(catalogPath, svcMeta, planMeta)
+func GetParsedKubernetesComponentByTemplate(catalogPath, instanceId, org, space string, temp *TemplateMetadata) (*KubernetesComponent, error) {
+	blueprint, err := GetKubernetesBlueprint(catalogPath, temp.TemplateDirName, temp.TemplatePlanDirName, temp.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	return ParseKubernetesComponent(blueprint, instanceId, temp.Id, temp.Id, org, space)
+}
+
+func GetParsedKubernetesComponentByServiceAndPlan(catalogPath, instanceId, org, space string, svcMeta ServiceMetadata, planMeta PlanMetadata) (*KubernetesComponent, error) {
+	blueprint, err := GetKubernetesBlueprint(catalogPath, svcMeta.InternalId, planMeta.InternalId, svcMeta.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -74,11 +83,11 @@ func ParseKubernetesComponent(blueprint KubernetesBlueprint, instanceId, svcMeta
 	}
 	blueprint.SecretsJson = parsedSecrets
 
-	parsedDpls := []string{}
-	for i, dpl := range blueprint.DeploymentsJson {
-		parsedDpls = append(parsedDpls, adjust_params(dpl, org, space, instanceId, svcMetaId, planMetaId, i))
+	parsedDeployments := []string{}
+	for i, deployment := range blueprint.DeploymentJson {
+		parsedDeployments = append(parsedDeployments, adjust_params(deployment, org, space, instanceId, svcMetaId, planMetaId, i))
 	}
-	blueprint.DeploymentsJson = parsedDpls
+	blueprint.DeploymentJson = parsedDeployments
 
 	parsedSvcs := []string{}
 	for i, svc := range blueprint.ServiceJson {
@@ -92,47 +101,50 @@ func ParseKubernetesComponent(blueprint KubernetesBlueprint, instanceId, svcMeta
 	}
 	blueprint.ServiceAcccountJson = parsedAccountSvcs
 
-	return CreateKubernetesComponentFromBlueprint(blueprint)
+	return CreateKubernetesComponentFromBlueprint(blueprint, false)
 }
 
-func CreateKubernetesComponentFromBlueprint(blueprint KubernetesBlueprint) (*KubernetesComponent, error) {
+func CreateKubernetesComponentFromBlueprint(blueprint KubernetesBlueprint, encodeSecrets bool) (*KubernetesComponent, error) {
 	result := &KubernetesComponent{}
 
 	for _, pvc := range blueprint.PersistentVolumeClaim {
 		parsedPVC := &api.PersistentVolumeClaim{}
 		err := json.Unmarshal([]byte(pvc), parsedPVC)
 		if err != nil {
-			logger.Error("[ParseKubernetesComponenets] Unmarshalling PersistentVolumeClaim error:", err)
+			logger.Error("Unmarshalling PersistentVolumeClaim error:", err)
 			return result, err
 		}
-		result.PersistentVolumeClaim = append(result.PersistentVolumeClaim, parsedPVC)
+		result.PersistentVolumeClaims = append(result.PersistentVolumeClaims, parsedPVC)
 	}
 
 	for _, secret := range blueprint.SecretsJson {
 		parsedSecret := &api.Secret{}
+		if encodeSecrets {
+			secret = encodeByte64ToString(secret)
+		}
 		err := json.Unmarshal([]byte(secret), parsedSecret)
 		if err != nil {
-			logger.Error("[ParseKubernetesComponenets] Unmarshalling secret error:", err)
+			logger.Error("Unmarshalling secret error:", err)
 			return result, err
 		}
 		result.Secrets = append(result.Secrets, parsedSecret)
 	}
 
-	for _, dpl := range blueprint.DeploymentsJson {
-		parsedDpl := &extensions.Deployment{}
-		err := json.Unmarshal([]byte(dpl), parsedDpl)
+	for _, deployment := range blueprint.DeploymentJson {
+		parsedDeployment := &extensions.Deployment{}
+		err := json.Unmarshal([]byte(deployment), parsedDeployment)
 		if err != nil {
-			logger.Error("[ParseKubernetesComponenets] Unmarshalling deployment error:", err)
+			logger.Error("Unmarshalling deployment error:", err)
 			return result, err
 		}
-		result.Deployments = append(result.Deployments, parsedDpl)
+		result.Deployments = append(result.Deployments, parsedDeployment)
 	}
 
 	for _, svc := range blueprint.ServiceJson {
 		parsedSvc := &api.Service{}
 		err := json.Unmarshal([]byte(svc), parsedSvc)
 		if err != nil {
-			logger.Error("[ParseKubernetesComponenets] Unmarshalling service error:", err)
+			logger.Error("Unmarshalling service error:", err)
 			return result, err
 		}
 		result.Services = append(result.Services, parsedSvc)
@@ -142,7 +154,7 @@ func CreateKubernetesComponentFromBlueprint(blueprint KubernetesBlueprint) (*Kub
 		parsedAccSvc := &api.ServiceAccount{}
 		err := json.Unmarshal([]byte(Accsvc), parsedAccSvc)
 		if err != nil {
-			logger.Error("[ParseKubernetesComponenets] Unmarshalling service account error:", err)
+			logger.Error("Unmarshalling service account error:", err)
 			return result, err
 		}
 		result.ServiceAccounts = append(result.ServiceAccounts, parsedAccSvc)
@@ -150,21 +162,26 @@ func CreateKubernetesComponentFromBlueprint(blueprint KubernetesBlueprint) (*Kub
 	return result, nil
 }
 
-func GetKubernetesBlueprintByServiceAndPlan(catalogPath string, svcMeta ServiceMetadata, planMeta PlanMetadata) (KubernetesBlueprint, error) {
+func GetCatalogFilesPath(catalogPath, templateDirName, planDirName string) (plan_path, secrets_path, k8s_plan_path string) {
+	svc_path := catalogPath + templateDirName + "/"
+	plan_path = svc_path + planDirName + "/"
+	secrets_path = svc_path + "secretTemplates/"
+	k8s_plan_path = plan_path + "k8s/"
+	return
+}
+
+func GetKubernetesBlueprint(catalogPath, templateDirName, planDirName, templateId string) (KubernetesBlueprint, error) {
 	result := KubernetesBlueprint{}
 	var err error
 	var secretTemplatesExists bool
 
 	//todo replace it by psotgres!
 	// first check in registred dynamic templates:
-	if blueprint, ok := TEMP_DYNAMIC_BLUEPRINTS[svcMeta.Id]; ok {
+	if blueprint, ok := TEMP_DYNAMIC_BLUEPRINTS[templateId]; ok {
 		return blueprint, nil
 	}
 
-	svc_path := catalogPath + svcMeta.InternalId + "/"
-	plan_path := svc_path + planMeta.InternalId + "/"
-	secrets_path := svc_path + "secretTemplates/"
-	k8s_plan_path := plan_path + "k8s/"
+	plan_path, secrets_path, k8s_plan_path := GetCatalogFilesPath(catalogPath, templateDirName, planDirName)
 
 	result.PersistentVolumeClaim, err = read_k8s_json_files_with_prefix_from_dir(k8s_plan_path, "persistentvolumeclaim")
 	if err != nil {
@@ -174,7 +191,7 @@ func GetKubernetesBlueprintByServiceAndPlan(catalogPath string, svcMeta ServiceM
 
 	result.SecretsJson, err = read_k8s_json_files_with_prefix_from_dir(k8s_plan_path, "secret")
 	if err != nil {
-		logger.Error("[GetKubernetesBlueprintForServiceAndPlan] Error reading secret files", err)
+		logger.Error("Error reading secret files", err)
 		return result, err
 	}
 
@@ -190,47 +207,45 @@ func GetKubernetesBlueprintByServiceAndPlan(catalogPath string, svcMeta ServiceM
 		if secretTemplatesExists {
 			result.SecretsJson, err = read_k8s_files_with_prefix_from_dir(secrets_path, "secret")
 			if err != nil {
-				logger.Error("[GetKubernetesBlueprintForServiceAndPlan] Error reading secret files "+
-					"from secretTemplates path", err)
+				logger.Error("Error reading secret files from secretTemplates path", err)
 				return result, err
 			}
 		}
 	}
 
-	result.DeploymentsJson, err = read_k8s_json_files_with_prefix_from_dir(k8s_plan_path, "deployment")
+	result.DeploymentJson, err = read_k8s_json_files_with_prefix_from_dir(k8s_plan_path, "deployment")
 	if err != nil {
-		logger.Error("[GetKubernetesBlueprintForServiceAndPlan] Error reading Deployment file", err)
+		logger.Error("Error reading deployment file", err)
 		return result, err
 	}
-	logger.Error("Deployments JSON", result.DeploymentsJson)
 
 	result.ServiceJson, err = read_k8s_json_files_with_prefix_from_dir(k8s_plan_path, "service")
 	if err != nil {
-		logger.Error("[GetKubernetesBlueprintForServiceAndPlan] Error reading service file", err)
+		logger.Error("Error reading service file", err)
 		return result, err
 	}
 
 	result.ServiceAcccountJson, err = read_k8s_json_files_with_prefix_from_dir(k8s_plan_path, "account")
 	if err != nil {
-		logger.Error("[GetKubernetesBlueprintForServiceAndPlan] Error reading account file", err)
+		logger.Error("Error reading account file", err)
 		return result, err
 	}
 
 	credentialMappings, err := read_k8s_json_files_with_prefix_from_dir(plan_path, "credentials-mappings")
 	if err != nil {
-		logger.Error("[GetKubernetesBlueprintForServiceAndPlan] Error reading credential mappings file", err)
+		logger.Error("Error reading credential mappings file", err)
 		return result, err
 	}
 
 	replicas, err := read_k8s_json_files_with_prefix_from_dir(plan_path, "node_template")
 	if err != nil {
-		logger.Error("[GetKubernetesBlueprintForServiceAndPlan] Error reading replica template files", svc_path)
+		logger.Error("Error reading replica template files", plan_path)
 		return result, err
 	}
 
 	uriTemplate, err := read_k8s_files_with_prefix_from_dir(plan_path, "uri_cluster_template")
 	if err != nil {
-		logger.Error("[GetKubernetesBlueprintForServiceAndPlan] Error reading uri template files", svc_path)
+		logger.Error("Error reading uri template files", plan_path)
 		return result, err
 	}
 
@@ -266,16 +281,20 @@ func adjust_params(content, org, space, cf_service_id string, svc_meta_id, plan_
 	for i := 0; i < 9; i++ {
 		f = strings.Replace(f, "$random"+strconv.Itoa(i), get_random_string(10), -1)
 	}
+	f = encodeByte64ToString(f)
+	return f
+}
 
+func encodeByte64ToString(content string) string {
 	rp := regexp.MustCompile(`\$base64\-(.*)\"`)
-	fs := rp.FindAllString(f, -1)
+	fs := rp.FindAllString(content, -1)
 	for _, sub := range fs {
 		sub = strings.Replace(sub, "$base64-", "", -1)
 		sub = strings.Replace(sub, "\"", "", -1)
-		f = strings.Replace(f, "$base64-"+sub, base64.StdEncoding.EncodeToString([]byte(sub)), -1)
+		content = strings.Replace(content, "$base64-"+sub, base64.StdEncoding.EncodeToString([]byte(sub)), -1)
 	}
 
-	return f
+	return content
 }
 
 /*
@@ -321,6 +340,28 @@ func read_k8s_files_with_prefix_suffix_from_dir(path, prefix string, suffix stri
 		}
 	}
 	return results, nil
+}
+
+func save_k8s_file_in_dir(path, fileName string, file interface{}) error {
+	logger.Debug("[save_k8s_file_in_dir]", path)
+
+	bBody, err := json.Marshal(file)
+	if err != nil {
+		logger.Error("[save_k8s_file_in_dir] Crate Dir failed!:", err)
+		return err
+	}
+
+	err = os.MkdirAll(path, 0777)
+	if err != nil {
+		logger.Error("[save_k8s_file_in_dir] Crate Dir failed!:", err)
+		return err
+	}
+	err = ioutil.WriteFile(path+"/"+fileName, bBody, 0666)
+	if err != nil {
+		logger.Error("[save_k8s_file_in_dir] Save file failed:", err)
+		return err
+	}
+	return nil
 }
 
 func check_if_file_or_dir_exists(path string) (bool, error) {

@@ -6,7 +6,7 @@ applications:
   command: tap
   buildpack: https://github.com/jmcarp/go-buildpack.git
 env:
-  VERSION: "0.8.17"
+  VERSION: "0.8.24"
   AUTH_USER: admin
   AUTH_PASS: password
   ACCEPT_INCOMPLETE: true

@@ -18,6 +18,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gocraft/web"
@@ -42,91 +43,104 @@ func (c *Context) CheckBrokerConfig(rw web.ResponseWriter, req *web.Request, nex
 	next(rw, req)
 }
 
-func (c *Context) Catalog(rw web.ResponseWriter, req *web.Request) {
-	services := catalog.GetAvailableServicesMetadata()
-	util.WriteJson(rw, services, http.StatusOK)
-}
-
-type GenerateParsedTemplateRequest struct {
-	Uuid                string `json:"uuid"`
-	ServiceMetadataUuid string `json:"serviceMetadataUuid"`
-	PlanMetadataUuid    string `json:"planMetadataUuid"`
-	OrgId               string `json:"orgId"`
-	SpaceId             string `json:"spaceId"`
+func (c *Context) Templates(rw web.ResponseWriter, req *web.Request) {
+	result := []catalog.Template{}
+	templatesMetadata := catalog.GetAvailableTemplates()
+	for _, templateMetadata := range templatesMetadata {
+		template, err := catalog.GetRawTemplate(templateMetadata, catalog.CatalogPath)
+		if err != nil {
+			util.Respond500(rw, err)
+			return
+		}
+		result = append(result, template)
+	}
+	util.WriteJson(rw, result, http.StatusOK)
 }
 
 func (c *Context) GenerateParsedTemplate(rw web.ResponseWriter, req *web.Request) {
-	req_json := GenerateParsedTemplateRequest{}
+	templateId := req.PathParams["templateId"]
+	uuid := req.URL.Query().Get("serviceId")
+	if templateId == "" || uuid == "" {
+		util.Respond500(rw, errors.New("templateId and uuid can't be empty!"))
+		return
+	}
 
-	err := util.ReadJson(req, &req_json)
+	templateMetadata := catalog.GetTemplateMetadataById(templateId)
+	if templateMetadata == nil {
+		util.Respond500(rw, errors.New(fmt.Sprintf("Can't find template by id: %s", templateId)))
+		return
+	}
+
+	template, err := catalog.GetParsedTemplate(templateMetadata, catalog.CatalogPath, uuid, "defaultOrg", "defaultSpace")
 	if err != nil {
 		util.Respond500(rw, err)
 		return
 	}
-
-	svcMetadata, planMetadata, err := catalog.WhatToCreateByServiceAndPlanId(req_json.ServiceMetadataUuid, req_json.PlanMetadataUuid)
-	if err != nil {
-		util.Respond500(rw, err)
-		return
-	}
-
-	component, err := catalog.GetParsedKubernetesComponent(catalog.CatalogPath, req_json.Uuid,
-		req_json.OrgId, req_json.SpaceId, svcMetadata, planMetadata)
-	if err != nil {
-		util.Respond500(rw, err)
-		return
-	}
-	util.WriteJson(rw, component, http.StatusOK)
+	util.WriteJson(rw, template, http.StatusOK)
 }
 
-type DynamicServiceRequest struct {
-	DynamicService catalog.DynamicService `json:"dynamicService"`
-}
+func (c *Context) CreateCustomTemplate(rw web.ResponseWriter, req *web.Request) {
+	reqTemplate := catalog.Template{}
 
-func (c *Context) CreateAndRegisterDynamicService(rw web.ResponseWriter, req *web.Request) {
-	req_json := DynamicServiceRequest{}
-
-	err := util.ReadJson(req, &req_json)
+	err := util.ReadJson(req, &reqTemplate)
 	if err != nil {
 		util.Respond500(rw, err)
 		return
 	}
 
-	if catalog.CheckIfServiceAlreadyExist(req_json.DynamicService.ServiceName) {
-		util.Respond500(rw, errors.New("Service with name: "+req_json.DynamicService.ServiceName+" already exists!"))
+	if reqTemplate.Id == "" {
+		util.Respond500(rw, errors.New("Teplate Id can not be empty!"))
 		return
 	}
 
-	blueprint, _, service, err := catalog.CreateDynamicService(req_json.DynamicService)
+	if catalog.GetTemplateMetadataById(reqTemplate.Id) != nil {
+		logger.Warning(fmt.Sprintf("Template with Id: %s already exists!", reqTemplate.Id))
+		util.WriteJson(rw, "", http.StatusConflict)
+		return
+	}
+
+	err = catalog.AddAndRegisterCustomTemplate(reqTemplate)
 	if err != nil {
-		logger.Error("[CreateAndRegisterDynamicService] CreateDynamicService fail!", err)
 		util.Respond500(rw, err)
 		return
 	}
-
-	catalog.RegisterOfferingInCatalog(service, blueprint)
 	util.WriteJson(rw, "", http.StatusCreated)
 }
 
-func (c *Context) DeleteAndUnregisterDynamicService(rw web.ResponseWriter, req *web.Request) {
-	req_json := DynamicServiceRequest{}
+func (c *Context) GetCustomTemplate(rw web.ResponseWriter, req *web.Request) {
+	templateId := req.PathParams["templateId"]
+	if templateId == "" {
+		util.Respond500(rw, errors.New("templateId can not be empty!"))
+		return
+	}
 
-	err := util.ReadJson(req, &req_json)
+	templateMetadata := catalog.GetTemplateMetadataById(templateId)
+	if templateMetadata == nil {
+		util.Respond500(rw, errors.New("Template not exist!"))
+		return
+	}
+
+	template, err := catalog.GetRawTemplate(templateMetadata, catalog.CatalogPath)
 	if err != nil {
 		util.Respond500(rw, err)
 		return
 	}
+	util.WriteJson(rw, template, http.StatusOK)
+}
 
-	service, err := catalog.GetServiceByName(req_json.DynamicService.ServiceName)
-	if err != nil {
-		logger.Error("[DeleteAndUnRegisterDynamicService] Delete DynamicService fail!", err)
-		util.WriteJson(rw, "", http.StatusGone)
+func (c *Context) DeleteCustomTemplate(rw web.ResponseWriter, req *web.Request) {
+	templateId := req.PathParams["templateId"]
+	if templateId == "" {
+		util.Respond500(rw, errors.New("templateId can not be empty!"))
 		return
 	}
 
-	catalog.UnregisterOfferingFromCatalog(service)
-	util.WriteJson(rw, "", http.StatusNoContent)
-
+	err := catalog.RemoveAndUnregisterCustomTemplate(templateId)
+	if err != nil {
+		util.Respond500(rw, err)
+		return
+	}
+	util.WriteJson(rw, "", http.StatusOK)
 }
 
 func (c *Context) Error(rw web.ResponseWriter, r *web.Request, err interface{}) {

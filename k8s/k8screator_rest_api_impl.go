@@ -154,7 +154,7 @@ func (k *K8sCreatorConnector) checkIfClustersQuotaNotExeeded() error {
 		return err
 	}
 
-	if len(clusters) > k.OrgQuota {
+	if len(clusters) >= k.OrgQuota {
 		return errors.New(fmt.Sprintf("Clusters quota exceeded! Max allowed level is: %d", k.OrgQuota))
 	} else {
 		return nil
@@ -198,6 +198,7 @@ func (k *K8sCreatorConnector) GetOrCreateCluster(org string) (K8sClusterCredenti
 					logger.Error("[GetOrCreateCluster] ERROR: PostCluster", err)
 					return K8sClusterCredentials{}, err
 				} else if status == 409 {
+					logger.Error("PostCluster: Unexpected cluster conflict!", err)
 					return K8sClusterCredentials{}, errors.New("UnExpected Cluster conflict")
 				}
 				wasCreated = true

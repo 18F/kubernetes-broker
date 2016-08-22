@@ -34,8 +34,6 @@ import (
 
 // we need this redundant interface to be able to inject TestClient in Test class
 type KubernetesClient interface {
-	Deployments(namespace string) k8sClient.DeploymentInterface
-	ReplicaSets(namespace string) k8sClient.ReplicaSetInterface
 	Nodes() k8sClient.NodeInterface
 	Events(namespace string) k8sClient.EventInterface
 	Endpoints(namespace string) k8sClient.EndpointsInterface
@@ -53,15 +51,27 @@ type KubernetesClient interface {
 	ConfigMaps(namespace string) k8sClient.ConfigMapsInterface
 }
 
+type ExtensionsInterface interface {
+	Scales(namespace string) k8sClient.ScaleInterface
+	DaemonSets(namespace string) k8sClient.DaemonSetInterface
+	Deployments(namespace string) k8sClient.DeploymentInterface
+	Jobs(namespace string) k8sClient.JobInterface
+	Ingress(namespace string) k8sClient.IngressInterface
+	ThirdPartyResources() k8sClient.ThirdPartyResourceInterface
+	ReplicaSets(namespace string) k8sClient.ReplicaSetInterface
+	PodSecurityPolicies() k8sClient.PodSecurityPolicyInterface
+}
+
 type KubernetesClientCreator interface {
 	GetNewClient(creds K8sClusterCredentials) (KubernetesClient, error)
+	GetNewExtensionsClient(creds K8sClusterCredentials) (ExtensionsInterface, error)
 }
 
-type KubernetesRestCreator struct {
-}
+type KubernetesRestCreator struct{}
 
 type KubernetesTestCreator struct {
-	testClient *testclient.FakeExperimental
+	testClient          *testclient.Fake
+	testExtensionClient *testclient.FakeExperimental
 }
 
 var logger = logger_wrapper.InitLogger("k8s")
@@ -71,11 +81,32 @@ func (k *KubernetesRestCreator) GetNewClient(creds K8sClusterCredentials) (Kuber
 		// get default K8s api client from same cluster as pod's
 		return k8sClient.NewInCluster()
 	} else {
-		return getKubernetesClient(creds)
+		config, err := getKubernetesConfig(creds)
+		if err != nil {
+			return nil, err
+		}
+		return k8sClient.New(config)
 	}
 }
 
-func getKubernetesClient(creds K8sClusterCredentials) (KubernetesClient, error) {
+func (k *KubernetesRestCreator) GetNewExtensionsClient(creds K8sClusterCredentials) (ExtensionsInterface, error) {
+	if creds.Server == "" {
+		// get default K8s api client from same cluster as pod's
+		config, err := restclient.InClusterConfig()
+		if err != nil {
+			return nil, err
+		}
+		return k8sClient.NewExtensions(config)
+	} else {
+		config, err := getKubernetesConfig(creds)
+		if err != nil {
+			return nil, err
+		}
+		return k8sClient.NewExtensions(config)
+	}
+}
+
+func getKubernetesConfig(creds K8sClusterCredentials) (*restclient.Config, error) {
 	sslActive, parseError := strconv.ParseBool(cfenv.CurrentEnv()["KUBE_SSL_ACTIVE"])
 	if parseError != nil {
 		logger.Error("KUBE_SSL_ACTIVE env probably not set!")
@@ -101,11 +132,15 @@ func getKubernetesClient(creds K8sClusterCredentials) (KubernetesClient, error) 
 		Password:  creds.Password,
 		Transport: transport,
 	}
-	return k8sClient.New(config)
+	return config, nil
 }
 
 func (k *KubernetesTestCreator) GetNewClient(creds K8sClusterCredentials) (KubernetesClient, error) {
 	return k.testClient, nil
+}
+
+func (k *KubernetesTestCreator) GetNewExtensionsClient(creds K8sClusterCredentials) (ExtensionsInterface, error) {
+	return k.testExtensionClient, nil
 }
 
 /*
@@ -113,7 +148,11 @@ func (k *KubernetesTestCreator) GetNewClient(creds K8sClusterCredentials) (Kuber
 	All objects should do same action e.g. list/update/create
 */
 func (k *KubernetesTestCreator) LoadSimpleResponsesWithSameAction(responseObjects ...runtime.Object) {
-	k.testClient = testclient.NewSimpleFakeExp(responseObjects...)
+	k.testClient = testclient.NewSimpleFake(responseObjects...)
+}
+
+func (k *KubernetesTestCreator) LoadSimpleResponsesWithSameActionForExtensionsClient(responeObjects ...runtime.Object) {
+	k.testExtensionClient = testclient.NewSimpleFakeExp(responeObjects...)
 }
 
 type KubernetesTestAdvancedParams struct {
@@ -126,7 +165,7 @@ type KubernetesTestAdvancedParams struct {
 	This method allow to inject response object dependly of their action
 */
 func (k *KubernetesTestCreator) LoadAdvancedResponses(params []KubernetesTestAdvancedParams) {
-	fakeClient := &testclient.FakeExperimental{}
+	fakeClient := &testclient.Fake{}
 
 	for _, param := range params {
 		o := testclient.NewObjects(api.Scheme, api.Codecs.UniversalDecoder())
