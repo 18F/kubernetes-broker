@@ -242,15 +242,87 @@ func TestDeleteAllByServiceId(t *testing.T) {
 
 func TestGetAllPodsEnvsByServiceId(t *testing.T) {
 	fabricator, _, mockKubernetesRest := prepareMocksAndRouter(t)
+	deployments := extensions.DeploymentList{
+		Items: []extensions.Deployment{{
+			ObjectMeta: api.ObjectMeta{
+				Labels: map[string]string{
+					"managed_by":   "TAP",
+					serviceIdLabel: serviceId,
+				},
+			},
+			Spec: extensions.DeploymentSpec{
+				Template: api.PodTemplateSpec{
+					Spec: api.PodSpec{
+						Containers: []api.Container{{
+							Env: []api.EnvVar{{
+								Name: "secret",
+								ValueFrom: &api.EnvVarSource{
+									SecretKeyRef: &api.SecretKeySelector{
+										LocalObjectReference: api.LocalObjectReference{
+											Name: "secret",
+										},
+									},
+								}},
+							}},
+						},
+					},
+				},
+			}},
+		},
+	}
 
 	Convey("Test GetAllPodsEnvsByServiceId", t, func() {
-		Convey("Should returns error when no items in respone", func() {
+		Convey("Should return error when no items in response", func() {
 			mockKubernetesRest.LoadSimpleResponsesWithSameAction()
 			mockKubernetesRest.LoadSimpleResponsesWithSameActionForExtensionsClient()
 
 			_, err := fabricator.GetAllPodsEnvsByServiceId(testCreds, space, serviceId)
 			So(err, ShouldNotBeNil)
 			So(err.Error(), ShouldEqual, "No deployments associated with the service: "+serviceId)
+		})
+
+		Convey("Should return data from matching secret", func() {
+			secrets := api.SecretList{
+				Items: []api.Secret{
+					api.Secret{
+						ObjectMeta: api.ObjectMeta{Name: "secret"},
+						Data: map[string][]byte{
+							"secret": []byte("secret"),
+						},
+					},
+				},
+			}
+
+			mockKubernetesRest.LoadSimpleResponsesWithSameActionForExtensionsClient(&deployments)
+			mockKubernetesRest.LoadSimpleResponsesWithSameAction(&secrets)
+
+			envs, err := fabricator.GetAllPodsEnvsByServiceId(testCreds, space, serviceId)
+			So(err, ShouldBeNil)
+			So(envs, ShouldHaveLength, 1)
+			So(envs[0].Containers, ShouldHaveLength, 1)
+			So(envs[0].Containers[0].Envs["secret"], ShouldEqual, "secret")
+		})
+
+		Convey("Should return empty string when no matching secret", func() {
+			secrets := api.SecretList{
+				Items: []api.Secret{
+					api.Secret{
+						ObjectMeta: api.ObjectMeta{Name: "anothersecret"},
+						Data: map[string][]byte{
+							"secret": []byte("secret"),
+						},
+					},
+				},
+			}
+
+			mockKubernetesRest.LoadSimpleResponsesWithSameActionForExtensionsClient(&deployments)
+			mockKubernetesRest.LoadSimpleResponsesWithSameAction(&secrets)
+
+			envs, err := fabricator.GetAllPodsEnvsByServiceId(testCreds, space, serviceId)
+			So(err, ShouldBeNil)
+			So(envs, ShouldHaveLength, 1)
+			So(envs[0].Containers, ShouldHaveLength, 1)
+			So(envs[0].Containers[0].Envs["secret"], ShouldEqual, "")
 		})
 	})
 }

@@ -688,20 +688,20 @@ func (k *K8Fabricator) GetAllPodsEnvsByServiceId(creds K8sClusterCredentials, sp
 		pod.Containers = []ContainerSimple{}
 
 		for _, container := range deployment.Spec.Template.Spec.Containers {
-			simpelContainer := ContainerSimple{}
-			simpelContainer.Name = container.Name
-			simpelContainer.Envs = map[string]string{}
+			simpleContainer := ContainerSimple{}
+			simpleContainer.Name = container.Name
+			simpleContainer.Envs = map[string]string{}
 
 			for _, env := range container.Env {
 				if env.Value == "" {
 					logger.Debug("Empty env value, searching env variable in secrets")
-					simpelContainer.Envs[env.Name] = findSecretValue(secrets, envNameToSecretKey(env.Name))
+					simpleContainer.Envs[env.Name] = findSecretValue(secrets, env.ValueFrom.SecretKeyRef.Name, envNameToSecretKey(env.Name))
 				} else {
-					simpelContainer.Envs[env.Name] = env.Value
+					simpleContainer.Envs[env.Name] = env.Value
 				}
 
 			}
-			pod.Containers = append(pod.Containers, simpelContainer)
+			pod.Containers = append(pod.Containers, simpleContainer)
 		}
 		result = append(result, pod)
 	}
@@ -713,15 +713,18 @@ func envNameToSecretKey(env_name string) string {
 	return strings.Replace(lower_case_string, "_", "-", -1)
 }
 
-func findSecretValue(secrets *api.SecretList, secret_key string) string {
-	for _, i := range secrets.Items {
-		for key, value := range i.Data {
-			if key == secret_key {
+func findSecretValue(secrets *api.SecretList, secretName string, secretKey string) string {
+	for _, secret := range secrets.Items {
+		if secret.Name != secretName {
+			continue
+		}
+		for key, value := range secret.Data {
+			if key == secretKey {
 				return string((value))
 			}
 		}
 	}
-	logger.Info("Secret key not found: ", secret_key)
+	logger.Info("Secret key not found: ", secretKey)
 	return ""
 }
 
