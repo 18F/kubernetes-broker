@@ -319,8 +319,8 @@ func getServiceExternalAddress(port api.ServicePort) string {
 	return strings.ToLower(string(port.Protocol)) + "." + brokerConfig.Domain + ":" + strconv.Itoa(int(port.NodePort))
 }
 
-func getServiceInternalHost(port api.ServicePort, service api.Service) string {
-	return getConsulServiceName(port, service) + ".service.consul"
+func getServiceInternalHost(port api.ServicePort, service api.Service, domain string) string {
+	return fmt.Sprintf("%s.service.%s", getConsulServiceName(port, service), domain)
 }
 
 func getConsulServiceName(port api.ServicePort, service api.Service) string {
@@ -568,8 +568,8 @@ var addressParser AddressParser
 
 type ConsulAddressParser struct{}
 
-func (ConsulAddressParser) ParseHost(service api.Service, _ k8s.K8sClusterCredentials) string {
-	return getServiceInternalHostByFirstTCPPort(service)
+func (ConsulAddressParser) ParseHost(service api.Service, creds k8s.K8sClusterCredentials) string {
+	return getServiceInternalHostByFirstTCPPort(service, creds.ConsulDomain)
 }
 
 func (ConsulAddressParser) ParsePort(_ api.Service, port api.ServicePort) int32 {
@@ -620,10 +620,10 @@ func getServiceCredentials(creds k8s.K8sClusterCredentials, org, serviceId strin
 	return result, nil
 }
 
-func getServiceInternalHostByFirstTCPPort(service api.Service) string {
+func getServiceInternalHostByFirstTCPPort(service api.Service, domain string) string {
 	for _, port := range service.Spec.Ports {
 		if port.Protocol == api.ProtocolTCP {
-			return getServiceInternalHost(port, service)
+			return getServiceInternalHost(port, service, domain)
 		}
 	}
 	return ""

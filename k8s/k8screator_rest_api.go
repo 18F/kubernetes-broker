@@ -24,6 +24,7 @@ type K8sClusterCredentials struct {
 	AdminKey       string `json:"admin_key" envconfig:"admin_key"`
 	AdminCert      string `json:"admin_cert" envconfig:"admin_cert"`
 	ConsulEndpoint string `json:"consul_http_api" envconfig:"consul_http_api"`
+	ConsulDomain   string `json:"consul_domain" envconfig:"consul_domain" default:"consul"`
 }
 
 type K8sConnector interface {
