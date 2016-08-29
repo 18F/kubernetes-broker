@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -588,10 +589,11 @@ func (ServiceAddressParser) ParseHost(service api.Service, creds k8s.K8sClusterC
 		}
 	}
 	parts := strings.Split(creds.Server, ":")
-	if len(parts) > 2 {
-		return parts[1] //this mean that full url is provided
+	u, err := url.Parse(creds.Server)
+	if err == nil && u.Host != "" { //this mean that full url is provided
+		parts = strings.Split(u.Host, ":")
 	}
-	return parts[0] //host or host:port is provided
+	return parts[0]
 }
 
 func (ServiceAddressParser) ParsePort(service api.Service, port api.ServicePort) int32 {
