@@ -296,6 +296,24 @@ func (k *K8Fabricator) CheckKubernetesServiceHealthByServiceInstanceId(creds K8s
 	// if all healthy return true
 	// else return false
 
+	// Check load balancer status
+	services, err := c.Services(api.NamespaceDefault).List(api.ListOptions{
+		LabelSelector: selector,
+	})
+	if err != nil {
+		logger.Error("[CheckKubernetesServiceHealthByServiceInstanceId] Getting services failed:", err)
+		return false, err
+	}
+
+	for _, service := range services.Items {
+		if service.Spec.Type == "LoadBalancer" {
+			_, err = GetFirstLoadBalancerHost(service)
+			if err != nil {
+				return false, err
+			}
+		}
+	}
+
 	return true, nil
 }
 
@@ -755,6 +773,17 @@ func (k *K8Fabricator) GetAllPodsEnvsByServiceId(creds K8sClusterCredentials, sp
 		result = append(result, pod)
 	}
 	return result, nil
+}
+
+func GetFirstLoadBalancerHost(service api.Service) (string, error) {
+	for _, ingress := range service.Status.LoadBalancer.Ingress {
+		if ingress.IP != "" {
+			return ingress.IP, nil
+		} else if ingress.Hostname != "" {
+			return ingress.Hostname, nil
+		}
+	}
+	return "", fmt.Errorf("Load balancer pending on service: %s", service.Name)
 }
 
 func envNameToSecretKey(env_name string) string {
