@@ -742,9 +742,9 @@ func (k *K8Fabricator) GetAllPodsEnvsByServiceId(creds K8sClusterCredentials, sp
 			simpleContainer.Envs = map[string]string{}
 
 			for _, env := range container.Env {
-				if env.Value == "" {
+				if env.Value == "" && env.ValueFrom.SecretKeyRef != nil {
 					logger.Debug("Empty env value, searching env variable in secrets")
-					simpleContainer.Envs[env.Name] = findSecretValue(secrets, env.ValueFrom.SecretKeyRef.Name, envNameToSecretKey(env.Name))
+					simpleContainer.Envs[env.Name] = findSecretValue(secrets, env.ValueFrom.SecretKeyRef)
 				} else {
 					simpleContainer.Envs[env.Name] = env.Value
 				}
@@ -757,23 +757,18 @@ func (k *K8Fabricator) GetAllPodsEnvsByServiceId(creds K8sClusterCredentials, sp
 	return result, nil
 }
 
-func envNameToSecretKey(env_name string) string {
-	lower_case_string := strings.ToLower(env_name)
-	return strings.Replace(lower_case_string, "_", "-", -1)
-}
-
-func findSecretValue(secrets *api.SecretList, secretName string, secretKey string) string {
+func findSecretValue(secrets *api.SecretList, selector *api.SecretKeySelector) string {
 	for _, secret := range secrets.Items {
-		if secret.Name != secretName {
+		if secret.Name != selector.Name {
 			continue
 		}
 		for key, value := range secret.Data {
-			if key == secretKey {
+			if key == selector.Key {
 				return string((value))
 			}
 		}
 	}
-	logger.Info("Secret key not found: ", secretKey)
+	logger.Info("Secret key not found: ", selector.Key)
 	return ""
 }
 
