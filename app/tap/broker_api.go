@@ -20,8 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net"
-	"net/url"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -561,7 +560,7 @@ type ServiceCredential struct {
 }
 
 type AddressParser interface {
-	ParseHost(api.Service, k8s.K8sClusterCredentials) string
+	ParseHost(api.Service, k8s.K8sClusterCredentials, []string) string
 	ParsePort(api.Service, api.ServicePort) int32
 }
 
@@ -569,7 +568,7 @@ var addressParser AddressParser
 
 type ConsulAddressParser struct{}
 
-func (ConsulAddressParser) ParseHost(service api.Service, creds k8s.K8sClusterCredentials) string {
+func (ConsulAddressParser) ParseHost(service api.Service, creds k8s.K8sClusterCredentials, nodes []string) string {
 	return getServiceInternalHostByFirstTCPPort(service, creds.ConsulDomain)
 }
 
@@ -579,7 +578,7 @@ func (ConsulAddressParser) ParsePort(_ api.Service, port api.ServicePort) int32 
 
 type ServiceAddressParser struct{}
 
-func (ServiceAddressParser) ParseHost(service api.Service, creds k8s.K8sClusterCredentials) string {
+func (ServiceAddressParser) ParseHost(service api.Service, creds k8s.K8sClusterCredentials, nodes []string) string {
 	if len(service.Status.LoadBalancer.Ingress) > 0 {
 		for _, ingress := range service.Status.LoadBalancer.Ingress {
 			if ingress.IP != "" {
@@ -588,12 +587,7 @@ func (ServiceAddressParser) ParseHost(service api.Service, creds k8s.K8sClusterC
 			return ingress.Hostname
 		}
 	}
-	parts := strings.Split(creds.Server, ":")
-	u, err := url.Parse(creds.Server)
-	if err == nil && u.Host != "" { //this mean that full url is provided
-		parts = strings.Split(u.Host, ":")
-	}
-	return parts[0]
+	return nodes[0]
 }
 
 func (ServiceAddressParser) ParsePort(service api.Service, port api.ServicePort) int32 {
@@ -614,11 +608,18 @@ func getServiceCredentials(creds k8s.K8sClusterCredentials, org, serviceId strin
 	if len(services) < 1 {
 		return result, errors.New("No services associated with the serviceId: " + serviceId)
 	}
+	nodes, err := brokerConfig.KubernetesApi.GetClusterWorkers(creds)
+	if err != nil {
+		return result, err
+	}
+	if len(nodes) == 0 {
+		return result, errors.New("No nodes available.")
+	}
 
 	for _, svc := range services {
 		svcCred := ServiceCredential{
 			Name:    svc.Name,
-			Host:    addressParser.ParseHost(svc, creds),
+			Host:    addressParser.ParseHost(svc, creds, nodes),
 			Service: svc,
 		}
 		result = append(result, svcCred)
