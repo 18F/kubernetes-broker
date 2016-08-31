@@ -45,6 +45,7 @@ type KubernetesApi interface {
 	GetServices(creds K8sClusterCredentials, org string) ([]api.Service, error)
 	GetQuota(creds K8sClusterCredentials, space string) (*api.ResourceQuotaList, error)
 	GetClusterWorkers(creds K8sClusterCredentials) ([]string, error)
+	GetNodeIps(creds K8sClusterCredentials) ([]string, error)
 	GetPodsStateByServiceId(creds K8sClusterCredentials, service_id string) ([]PodStatus, error)
 	GetPodsStateForAllServices(creds K8sClusterCredentials) (map[string][]PodStatus, error)
 	ListDeployments(creds K8sClusterCredentials) (*extensions.DeploymentList, error)
@@ -556,6 +557,29 @@ func (k *K8Fabricator) GetClusterWorkers(creds K8sClusterCredentials) ([]string,
 		workers = append(workers, i.Spec.ExternalID)
 	}
 	return workers, nil
+}
+
+func (k *K8Fabricator) GetNodeIps(creds K8sClusterCredentials) ([]string, error) {
+	c, err := k.KubernetesClient.GetNewClient(creds)
+	if err != nil {
+		return []string{}, err
+	}
+
+	nodes, err := c.Nodes().List(api.ListOptions{})
+	if err != nil {
+		logger.Error("[GetClusterWorkers] GetNodes error:", err)
+		return []string{}, err
+	}
+
+	ips := []string{}
+	for _, i := range nodes.Items {
+		for _, ip := range i.Status.Addresses {
+			if ip.Type == api.NodeExternalIP {
+				ips = append(ips, ip.Address)
+			}
+		}
+	}
+	return ips, nil
 }
 
 func (k *K8Fabricator) ListDeployments(creds K8sClusterCredentials) (*extensions.DeploymentList, error) {

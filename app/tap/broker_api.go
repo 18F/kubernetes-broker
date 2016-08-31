@@ -608,7 +608,7 @@ func getServiceCredentials(creds k8s.K8sClusterCredentials, org, serviceId strin
 	if len(services) < 1 {
 		return result, errors.New("No services associated with the serviceId: " + serviceId)
 	}
-	nodes, err := brokerConfig.KubernetesApi.GetClusterWorkers(creds)
+	nodes, err := brokerConfig.KubernetesApi.GetNodeIps(creds)
 	if err != nil {
 		return result, err
 	}
