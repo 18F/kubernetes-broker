@@ -255,12 +255,11 @@ func TestGetAllPodsEnvsByServiceId(t *testing.T) {
 					Spec: api.PodSpec{
 						Containers: []api.Container{{
 							Env: []api.EnvVar{{
-								Name: "secret",
+								Name: "secret-env",
 								ValueFrom: &api.EnvVarSource{
 									SecretKeyRef: &api.SecretKeySelector{
-										LocalObjectReference: api.LocalObjectReference{
-											Name: "secret",
-										},
+										LocalObjectReference: api.LocalObjectReference{Name: "secret-name"},
+										Key:                  "secret-key",
 									},
 								}},
 							}},
@@ -285,9 +284,9 @@ func TestGetAllPodsEnvsByServiceId(t *testing.T) {
 			secrets := api.SecretList{
 				Items: []api.Secret{
 					api.Secret{
-						ObjectMeta: api.ObjectMeta{Name: "secret"},
+						ObjectMeta: api.ObjectMeta{Name: "secret-name"},
 						Data: map[string][]byte{
-							"secret": []byte("secret"),
+							"secret-key": []byte("secret-value"),
 						},
 					},
 				},
@@ -300,16 +299,16 @@ func TestGetAllPodsEnvsByServiceId(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(envs, ShouldHaveLength, 1)
 			So(envs[0].Containers, ShouldHaveLength, 1)
-			So(envs[0].Containers[0].Envs["secret"], ShouldEqual, "secret")
+			So(envs[0].Containers[0].Envs["secret-env"], ShouldEqual, "secret-value")
 		})
 
 		Convey("Should return empty string when no matching secret", func() {
 			secrets := api.SecretList{
 				Items: []api.Secret{
 					api.Secret{
-						ObjectMeta: api.ObjectMeta{Name: "anothersecret"},
+						ObjectMeta: api.ObjectMeta{Name: "another-secret-name"},
 						Data: map[string][]byte{
-							"secret": []byte("secret"),
+							"secret-key": []byte("secret-value"),
 						},
 					},
 				},
