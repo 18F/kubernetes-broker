@@ -1,0 +1,119 @@
+{
+  "kind": "Deployment",
+  "apiVersion": "extensions/v1beta1",
+  "metadata": {
+    "name": "$idx_and_short_serviceid",
+    "labels": {
+      "org": "$org",
+      "space": "$space",
+      "catalog_service_id": "$catalog_service_id",
+      "catalog_plan_id": "$catalog_plan_id",
+      "service_id": "$service_id",
+      "idx_and_short_serviceid": "$idx_and_short_serviceid",
+      "managed_by": "TAP"
+    }
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels" : {
+        "service_id": "$service_id",
+        "idx_and_short_serviceid": "$idx_and_short_serviceid"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "service_id": "$service_id",
+          "idx_and_short_serviceid": "$idx_and_short_serviceid",
+          "managed_by": "TAP"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "k-elasticsearch23-persistent",
+            "image": "jmcarp/docker-elasticsearch-kubernetes-auth",
+            "resources": {
+              "limits": {
+                "memory": "512M"
+              }
+            },
+            "securityContext": {
+              "privileged": true,
+              "add": [
+                "IPC_LOCK"
+              ]
+            },
+            "livenessProbe": {
+              "exec": {
+                "command": [ "/bin/sh", "-c", "/usr/bin/wget http://localhost:9200/_cluster/health?pretty -q -O - | /bin/grep cluster_name" ]
+              },
+              "initialDelaySeconds": 60,
+              "timeoutSeconds": 15,
+              "periodSeconds": 60,
+              "successThreshold": 1,
+              "failureThreshold": 4
+
+            },
+            "ports": [
+              {
+                "containerPort": 9200,
+                "protocol": "TCP"
+              },
+              {
+                "containerPort": 9300,
+                "protocol": "TCP"
+              }
+            ],
+            "env": [
+              {
+                "name": "NETWORK_HOST",
+                "value": "0.0.0.0"
+              },
+              {
+                "name": "ES_HEAP_SIZE",
+                "value": "256m"
+              },
+              {
+                "name": "KUBERNETES_CERTS_CA_FILE",
+                "value": "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+              },
+              {
+                "name": "CLUSTER_NAME",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "name": "$short_serviceid-es-secret-keyfile",
+                    "key": "cluster-name"
+                  }
+                }
+              },
+              {
+                "name": "ES_PASSWORD",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "name": "$short_serviceid-es-secret-keyfile",
+                    "key": "password"
+                  }
+                }
+              },
+              { "name": "NAMESPACE", "valueFrom": { "fieldRef": { "apiVersion": "v1", "fieldPath": "metadata.namespace" } } },
+              { "name": "MANAGED_BY", "value":"TAP" }
+            ],
+            "imagePullPolicy": "IfNotPresent"
+          }
+        ],
+        "volumes": [
+          {
+            "name": "elasticsearch-persistent-storage",
+            "persistentVolumeClaim": {
+              "claimName": "$idx_and_short_serviceid"
+            }
+          }
+        ],
+        "restartPolicy": "Always",
+        "dnsPolicy": "ClusterFirst"
+      }
+    }
+  }
+}
