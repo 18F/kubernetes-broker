@@ -100,6 +100,12 @@
               { "name": "NAMESPACE", "valueFrom": { "fieldRef": { "apiVersion": "v1", "fieldPath": "metadata.namespace" } } },
               { "name": "MANAGED_BY", "value":"TAP" }
             ],
+            "volumeMounts": [
+              {
+                "name": "elasticsearch-persistent-storage",
+                "mountPath": "/data"
+              }
+            ],
             "imagePullPolicy": "IfNotPresent"
           }
         ],
