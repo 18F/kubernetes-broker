@@ -33,7 +33,7 @@
         "containers": [
           {
             "name": "k-elasticsearch23-persistent",
-            "image": "jmcarp/docker-elasticsearch-kubernetes-auth",
+            "image": "18fgsa/docker-elasticsearch-kubernetes-auth",
             "resources": {
               "limits": {
                 "memory": "512M"
