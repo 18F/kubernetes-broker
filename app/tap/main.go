@@ -145,15 +145,6 @@ func initServices(cfApp *cfenv.App) {
 		logger.Fatalf(`Unknown connector type "%s"`, os.Getenv("CONNECTOR_TYPE"))
 	}
 
-	switch os.Getenv("KUBE_ADDRESS_PARSER") {
-	case "consul":
-		addressParser = ConsulAddressParser{}
-	case "service":
-		addressParser = ServiceAddressParser{}
-	default:
-		logger.Fatalf(`Unknown address parser "%s"`, os.Getenv("KUBE_ADDRESS_PARSER"))
-	}
-
 	brokerConfig.StateService = &state.StateMemoryService{}
 	brokerConfig.KubernetesApi = k8s.NewK8Fabricator()
 	brokerConfig.ConsulApi = &consul.ConsulConnector{}
