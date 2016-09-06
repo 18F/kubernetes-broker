@@ -554,47 +554,9 @@ func (c *Context) ServiceBindingsPut(rw web.ResponseWriter, req *web.Request) {
 }
 
 type ServiceCredential struct {
-	Name    string
-	Host    string
-	Service api.Service
-}
-
-type AddressParser interface {
-	ParseHost(api.Service, k8s.K8sClusterCredentials) string
-	ParsePort(api.Service, api.ServicePort) int32
-}
-
-var addressParser AddressParser
-
-type ConsulAddressParser struct{}
-
-func (ConsulAddressParser) ParseHost(service api.Service, creds k8s.K8sClusterCredentials) string {
-	return getServiceInternalHostByFirstTCPPort(service, creds.ConsulDomain)
-}
-
-func (ConsulAddressParser) ParsePort(_ api.Service, port api.ServicePort) int32 {
-	return port.NodePort
-}
-
-type ServiceAddressParser struct{}
-
-func (ServiceAddressParser) ParseHost(service api.Service, creds k8s.K8sClusterCredentials) string {
-	if len(service.Status.LoadBalancer.Ingress) > 0 {
-		for _, ingress := range service.Status.LoadBalancer.Ingress {
-			if ingress.IP != "" {
-				return ingress.IP
-			}
-			return ingress.Hostname
-		}
-	}
-	return strings.Split(creds.Server, ":")[0]
-}
-
-func (ServiceAddressParser) ParsePort(service api.Service, port api.ServicePort) int32 {
-	if len(service.Status.LoadBalancer.Ingress) > 0 {
-		return port.Port
-	}
-	return port.NodePort
+	Name  string
+	Host  string
+	Ports []api.ServicePort
 }
 
 func getServiceCredentials(creds k8s.K8sClusterCredentials, org, serviceId string) ([]ServiceCredential, error) {
@@ -611,9 +573,9 @@ func getServiceCredentials(creds k8s.K8sClusterCredentials, org, serviceId strin
 
 	for _, svc := range services {
 		svcCred := ServiceCredential{
-			Name:    svc.Name,
-			Host:    addressParser.ParseHost(svc, creds),
-			Service: svc,
+			Name:  svc.Name,
+			Host:  getServiceInternalHostByFirstTCPPort(svc, creds.ConsulDomain),
+			Ports: svc.Spec.Ports,
 		}
 		result = append(result, svcCred)
 	}

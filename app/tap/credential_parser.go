@@ -22,6 +22,8 @@ import (
 	"strconv"
 	"strings"
 
+	"k8s.io/kubernetes/pkg/api"
+
 	"github.com/trustedanalytics/kubernetes-broker/catalog"
 	"github.com/trustedanalytics/kubernetes-broker/k8s"
 )
@@ -80,7 +82,7 @@ func parseUriClusteredPlan(uriTemplate string, credentialsMapping string, svcCre
 	//build host:port for all services
 	for _, svc := range svcCreds {
 
-		port, err := getPort(uriTemplate, svc)
+		port, err := getPort(uriTemplate, svc.Ports)
 		if err != nil {
 			return "", err
 		}
@@ -140,7 +142,7 @@ func parsePorts(templateToParse string, svc ServiceCredential) (string, error) {
 	logger.Debug("$port_ variables: ", parsed_ports_list)
 
 	for _, parsed_port := range parsed_ports_list {
-		port, err := getPort(templateToParse, svc)
+		port, err := getPort(templateToParse, svc.Ports)
 		if err != nil {
 			return "", err
 		}
@@ -150,7 +152,7 @@ func parsePorts(templateToParse string, svc ServiceCredential) (string, error) {
 	return templateToParse, nil
 }
 
-func getPort(templateToParse string, svc ServiceCredential) (string, error) {
+func getPort(templateToParse string, ports []api.ServicePort) (string, error) {
 	parsed_ports_list := splitPortsFromTemplate(templateToParse)
 
 	for _, parsed_port := range parsed_ports_list {
@@ -162,13 +164,13 @@ func getPort(templateToParse string, svc ServiceCredential) (string, error) {
 		if err != nil {
 			return "", errors.New("Parsing error: Port value has incorrect fromat " + expected_port_num_strs[1])
 		}
-		for _, p := range svc.Service.Spec.Ports {
+		for _, p := range ports {
 			target_port_int, err := strconv.Atoi(p.TargetPort.String())
 			if err != nil {
 				return "", errors.New("Parsing error: TargetPort value has incorrect fromat " + p.TargetPort.String())
 			}
 			if target_port_int == expected_port_num_int {
-				return strconv.Itoa(int(addressParser.ParsePort(svc.Service, p))), nil
+				return strconv.Itoa(int(p.NodePort)), nil
 			}
 		}
 	}
