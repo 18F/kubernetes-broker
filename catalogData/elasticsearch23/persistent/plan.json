@@ -1,0 +1,6 @@
+{
+  "id": "dafd5d6e-0656-4a7d-b23b-3c4fb9b13d01",
+  "name": "persistent",
+  "description": "Basic Multi-node Elasticsearch stack",
+  "free": true
+}
