@@ -378,17 +378,6 @@ func (k *K8Fabricator) DeleteAllByServiceId(creds K8sClusterCredentials, service
 		name = i.ObjectMeta.Name
 		logger.Debug("[DeleteAllByServiceId] Delete replica set:", name)
 
-		dpl, err := extensionClient.ReplicaSets(api.NamespaceDefault).Get(name)
-		if err != nil {
-			return err
-		}
-
-		dpl.Spec.Replicas = 0
-		_, err = extensionClient.ReplicaSets(api.NamespaceDefault).Update(dpl)
-		if err != nil {
-			return err
-		}
-
 		err = extensionClient.ReplicaSets(api.NamespaceDefault).Delete(name, &api.DeleteOptions{})
 		if err != nil {
 			logger.Error("[DeleteAllByServiceId] Delete replica set failed:", err)
