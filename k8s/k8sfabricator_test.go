@@ -193,6 +193,31 @@ func TestCheckKubernetesServiceHealthByServiceInstanceId(t *testing.T) {
 			So(response, ShouldBeTrue)
 		})
 
+		Convey("Should error on pending containers", func() {
+			pods := api.PodList{
+				Items: []api.Pod{{
+					ObjectMeta: api.ObjectMeta{
+						Labels: map[string]string{
+							"managed_by":   "TAP",
+							serviceIdLabel: serviceId,
+						},
+					},
+					Status: api.PodStatus{
+						ContainerStatuses: []api.ContainerStatus{
+							api.ContainerStatus{Name: "running", Ready: true},
+							api.ContainerStatus{Name: "waiting", Ready: false},
+						},
+					}},
+				},
+			}
+			mockKubernetesRest.LoadSimpleResponsesWithSameAction(&pods)
+
+			response, err := fabricator.CheckKubernetesServiceHealthByServiceInstanceId(testCreds, space, serviceId)
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldContainSubstring, "waiting")
+			So(response, ShouldBeFalse)
+		})
+
 		// TODO: Fails on nil pointer exception on returning error in FakePods.List
 		/*Convey("Should returns error on Get pods fail", func() {
 			mockKubernetesRest.Init(getErrorResponseForSpecificResource("PodList"))

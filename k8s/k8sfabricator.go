@@ -295,6 +295,17 @@ func (k *K8Fabricator) CheckKubernetesServiceHealthByServiceInstanceId(creds K8s
 	// for each pod check if healthy
 	// if all healthy return true
 	// else return false
+	pending := []string{}
+	for _, pod := range pods.Items {
+		for _, status := range pod.Status.ContainerStatuses {
+			if !status.Ready {
+				pending = append(pending, status.Name)
+			}
+		}
+	}
+	if len(pending) > 0 {
+		return false, fmt.Errorf("Pod(s) not ready: %s", strings.Join(pending, ", "))
+	}
 
 	return true, nil
 }
