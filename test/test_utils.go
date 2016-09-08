@@ -16,8 +16,9 @@
 package test
 
 import (
+	"fmt"
 	"os"
-	"strings"
+	"regexp"
 
 	"k8s.io/kubernetes/pkg/api"
 
@@ -44,7 +45,10 @@ func GetTestCatalogPath(nameToTrim string) string {
 	if err != nil {
 		logger.Fatal("Unable to get working directory!")
 	}
-	return "/" + strings.Trim(pwd, nameToTrim) + "/test/catalog/"
+	return fmt.Sprintf(
+		"%s/test/catalog/",
+		regexp.MustCompile(regexp.QuoteMeta(nameToTrim)+"$").ReplaceAllString(pwd, ""),
+	)
 }
 
 func GetTestSecretData() []byte {
