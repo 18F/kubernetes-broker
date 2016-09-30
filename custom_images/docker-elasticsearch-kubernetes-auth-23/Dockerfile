@@ -2,9 +2,6 @@ FROM quay.io/pires/docker-elasticsearch-kubernetes:2.3.5_1
 
 MAINTAINER devops@gsa.gov
 
-# Install pwgen
-RUN apk add pwgen
-
 # Install elasticfence plugin
 RUN /elasticsearch/bin/plugin install https://raw.githubusercontent.com/elasticfence/elasticsearch-http-user-auth/2.3.5/jar/elasticfence-2.3.5-SNAPSHOT.zip
 

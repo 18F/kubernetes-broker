@@ -14,7 +14,7 @@
     }
   },
   "spec": {
-    "replicas": 3,
+    "replicas": 1,
     "selector": {
       "matchLabels" : {
         "service_id": "$service_id",
@@ -30,18 +30,20 @@
         }
       },
       "spec": {
-        "volumes": null,
         "containers": [
           {
-            "name": "k-elasticsearch17-clustered",
-            "image": "quay.io/pires/docker-elasticsearch-kubernetes:1.7.1-4",
+            "name": "k-elasticsearch17-persistent",
+            "image": "18fgsa/docker-elasticsearch-kubernetes-auth:1.7.2",
             "resources": {
               "limits": {
-                "memory": "500M"
-              },
-              "requests": {
-                "memory": "100M"
+                "memory": "512M"
               }
+            },
+            "securityContext": {
+              "privileged": true,
+              "add": [
+                "IPC_LOCK"
+              ]
             },
             "livenessProbe": {
               "exec": {
@@ -66,40 +68,16 @@
             ],
             "env": [
               {
-                "name": "KUBERNETES_CA_CERTIFICATE_FILE",
-                "valueFrom": {
-                  "secretKeyRef": {
-                    "name": "$short_serviceid-es-secret-keyfile",
-                    "key": "kubernetes-ca-certificate-file"
-                  }
-                }
+                "name": "NETWORK_HOST",
+                "value": "0.0.0.0"
               },
               {
-                "name": "DISCOVERY_SERVICE",
-                "valueFrom": {
-                  "secretKeyRef": {
-                    "name": "$short_serviceid-es-secret-keyfile",
-                    "key": "discovery-service"
-                  }
-                }
+                "name": "ES_HEAP_SIZE",
+                "value": "256m"
               },
               {
-                "name": "NODE_MASTER",
-                "valueFrom": {
-                  "secretKeyRef": {
-                    "name": "$short_serviceid-es-secret-keyfile",
-                    "key": "node-master"
-                  }
-                }
-              },
-              {
-                "name": "NODE_DATA",
-                "valueFrom": {
-                  "secretKeyRef": {
-                    "name": "$short_serviceid-es-secret-keyfile",
-                    "key": "node-data"
-                  }
-                }
+                "name": "KUBERNETES_CERTS_CA_FILE",
+                "value": "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
               },
               {
                 "name": "CLUSTER_NAME",
@@ -111,16 +89,7 @@
                 }
               },
               {
-                "name": "USERNAME",
-                "valueFrom": {
-                  "secretKeyRef": {
-                    "name": "$short_serviceid-es-secret-keyfile",
-                    "key": "username"
-                  }
-                }
-              },
-              {
-                "name": "PASSWORD",
+                "name": "ES_PASSWORD",
                 "valueFrom": {
                   "secretKeyRef": {
                     "name": "$short_serviceid-es-secret-keyfile",
@@ -128,19 +97,24 @@
                   }
                 }
               },
-              {
-                "name": "DBNAME",
-                "valueFrom": {
-                  "secretKeyRef": {
-                    "name": "$short_serviceid-es-secret-keyfile",
-                    "key": "dbname"
-                  }
-                }
-              },
               { "name": "NAMESPACE", "valueFrom": { "fieldRef": { "apiVersion": "v1", "fieldPath": "metadata.namespace" } } },
               { "name": "MANAGED_BY", "value":"TAP" }
             ],
+            "volumeMounts": [
+              {
+                "name": "elasticsearch-persistent-storage",
+                "mountPath": "/data"
+              }
+            ],
             "imagePullPolicy": "IfNotPresent"
+          }
+        ],
+        "volumes": [
+          {
+            "name": "elasticsearch-persistent-storage",
+            "persistentVolumeClaim": {
+              "claimName": "$idx_and_short_serviceid"
+            }
           }
         ],
         "restartPolicy": "Always",

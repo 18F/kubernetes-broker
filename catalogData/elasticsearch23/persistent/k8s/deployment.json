@@ -33,7 +33,7 @@
         "containers": [
           {
             "name": "k-elasticsearch23-persistent",
-            "image": "18fgsa/docker-elasticsearch-kubernetes-auth",
+            "image": "18fgsa/docker-elasticsearch-kubernetes-auth:2.3.5",
             "resources": {
               "limits": {
                 "memory": "512M"
