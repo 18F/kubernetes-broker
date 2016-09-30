@@ -1,2 +1,0 @@
-elasticfence.disabled: false
-elasticfence.root.password: ${ES_PASSWORD:-$(pwgen -s -1 16)}
