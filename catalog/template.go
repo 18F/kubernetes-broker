@@ -187,9 +187,9 @@ func RemoveAndUnregisterCustomTemplate(templateId string) error {
 	return nil
 }
 
-func GetParsedTemplate(templateMetadata *TemplateMetadata, catalogPath, instanceId, orgId, spaceId string) (Template, error) {
+func GetParsedTemplate(templateMetadata *TemplateMetadata, catalogPath, instanceId, orgId, spaceId, storageClass string) (Template, error) {
 	result := Template{Id: templateMetadata.Id}
-	component, err := GetParsedKubernetesComponentByTemplate(catalogPath, instanceId, orgId, spaceId, templateMetadata)
+	component, err := GetParsedKubernetesComponentByTemplate(catalogPath, instanceId, orgId, spaceId, storageClass, templateMetadata)
 	if err != nil {
 		return result, err
 	}
@@ -199,7 +199,7 @@ func GetParsedTemplate(templateMetadata *TemplateMetadata, catalogPath, instance
 		return result, err
 	}
 
-	jobHooks, err := GetParsedJobHooks(jobsHooksRaw, instanceId, templateMetadata.Id, templateMetadata.Id, orgId, spaceId)
+	jobHooks, err := GetParsedJobHooks(jobsHooksRaw, instanceId, templateMetadata.Id, templateMetadata.Id, orgId, spaceId, storageClass)
 	if err != nil {
 		return result, err
 	}
@@ -236,10 +236,10 @@ func GetRawTemplate(templateMetadata *TemplateMetadata, catalogPath string) (Tem
 	return result, nil
 }
 
-func GetParsedJobHooks(jobs []string, instanceId, svcMetaId, planMetaId, org, space string) ([]*JobHook, error) {
+func GetParsedJobHooks(jobs []string, instanceId, svcMetaId, planMetaId, org, space, storageClass string) ([]*JobHook, error) {
 	parsedJobs := []string{}
 	for i, job := range jobs {
-		parsedJobs = append(parsedJobs, adjust_params(job, org, space, instanceId, svcMetaId, planMetaId, i))
+		parsedJobs = append(parsedJobs, adjust_params(job, org, space, instanceId, svcMetaId, planMetaId, storageClass, i))
 	}
 	return unmarshallJobs(parsedJobs)
 }

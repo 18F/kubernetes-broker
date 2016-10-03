@@ -20,5 +20,6 @@ env:
   KUBE_SSL_ACTIVE: false
   WAIT_BEFORE_NEXT_PV_CHECK_SEC: 120
   WAIT_BEFORE_REMOVE_CLUSTER_SEC: 3600
+  STORAGE_CLASS: default
   GOPACKAGENAME: github.com/trustedanalytics/kubernetes-broker
   GO_INSTALL_PACKAGE_SPEC: ./app/tap
