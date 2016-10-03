@@ -39,6 +39,7 @@ import (
 type BrokerConfig struct {
 	CheckPVbeforeRemoveClusterIntervalSec time.Duration
 	WaitBeforeRemoveClusterIntervalSec    time.Duration
+	StorageClass                          string
 	Domain                                string
 	CloudProvider                         CloudApi
 	StateService                          state.StateService
@@ -122,7 +123,7 @@ func (c *Context) ServiceInstancesPut(rw web.ResponseWriter, req *web.Request) {
 	fabrication_function := func() {
 		logger.Info("[ServiceInstancesPut] Creating ", svc_meta.Name, " with plan: ", plan_meta.Name)
 		brokerConfig.StateService.ReportProgress(instance_id, "IN_PROGRESS_IN_BACKGROUND_JOB", nil)
-		component, err := catalog.GetParsedKubernetesComponentByServiceAndPlan(catalog.CatalogPath, instance_id, org, space, svc_meta, plan_meta)
+		component, err := catalog.GetParsedKubernetesComponentByServiceAndPlan(catalog.CatalogPath, instance_id, org, space, brokerConfig.StorageClass, svc_meta, plan_meta)
 		if err != nil {
 			brokerConfig.StateService.ReportProgress(instance_id, "FAILED", err)
 			if !async {

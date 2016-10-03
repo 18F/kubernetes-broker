@@ -159,6 +159,13 @@ func initServices(cfApp *cfenv.App) {
 	}
 	brokerConfig.CheckPVbeforeRemoveClusterIntervalSec = time.Second * time.Duration(waitBeforeNextPVCheckSec)
 	brokerConfig.WaitBeforeRemoveClusterIntervalSec = time.Second * time.Duration(waitBeforeRemoveClusterSec)
+
+	switch storageClass := os.Getenv("STORAGE_CLASS"); {
+	case storageClass != "":
+		brokerConfig.StorageClass = storageClass
+	default:
+		logger.Fatal("Must specify STORAGE_CLASS")
+	}
 }
 
 func removeNotUsedClusters() {
