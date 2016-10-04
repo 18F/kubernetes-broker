@@ -4,7 +4,7 @@ applications:
   memory: 256M
   instances: 1
   command: tap
-  buildpack: https://github.com/jmcarp/go-buildpack.git
+  buildpack: go_buildpack
 env:
   VERSION: "0.8.24"
   AUTH_USER: admin
