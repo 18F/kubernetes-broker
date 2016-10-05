@@ -36,7 +36,9 @@
             "image": "18fgsa/docker-elasticsearch-kubernetes-auth:1.7.2",
             "resources": {
               "limits": {
-                "memory": "3584M",
+                "memory": "3584M"
+              },
+              "requests": {
                 "cpu": 3
               }
             },
