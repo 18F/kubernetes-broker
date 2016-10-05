@@ -32,11 +32,12 @@
       "spec": {
         "containers": [
           {
-            "name": "k-elasticsearch17-persistent",
-            "image": "18fgsa/docker-elasticsearch-kubernetes-auth:1.7.2",
+            "name": "k-elasticsearch23-persistent",
+            "image": "18fgsa/docker-elasticsearch-kubernetes-auth:2.3.5",
             "resources": {
               "limits": {
-                "memory": "512M"
+                "memory": "1536M",
+                "cpu": 1
               }
             },
             "securityContext": {
@@ -73,7 +74,7 @@
               },
               {
                 "name": "ES_HEAP_SIZE",
-                "value": "256m"
+                "value": "1g"
               },
               {
                 "name": "KUBERNETES_CERTS_CA_FILE",
