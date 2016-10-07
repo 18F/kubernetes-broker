@@ -1,6 +1,6 @@
 {
   "id": "8f2a1b54-ec11-412e-b4ea-c7c6bff3fab1",
-  "name": "persistent",
-  "description": "persistent free plan",
+  "name": "standard",
+  "description": "standard",
   "free": true
 }
