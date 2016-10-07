@@ -5,7 +5,7 @@
 while ! nc -vz localhost 27017; do sleep 1; done
 
 # Create User
-mongo admin --eval "db.createUser({ user: '$MONGO_USERNAME', pwd: '$MONGO_PASSWORD', roles: [ { role: 'dbOwner', db: '$MONGO_DBNAME' } ] });"
+mongo $MONGO_DBNAME --eval "db.createUser({ user: '$MONGO_USERNAME', pwd: '$MONGO_PASSWORD', roles: [ { role: 'dbOwner', db: '$MONGO_DBNAME' } ] });"
 
 # Stop MongoDB service
 /usr/bin/mongod --dbpath /data/db --shutdown

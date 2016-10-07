@@ -78,7 +78,7 @@
                 }
               }
             ],
-            "imagePullPolicy": "IfNotPresent"
+            "imagePullPolicy": "Always"
           }
         ],
         "volumes": [
