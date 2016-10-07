@@ -37,7 +37,7 @@
             "image": "frodenas/redis",
             "resources": {
               "limits": {
-                "memory": "500M"
+                "memory": "512M"
               },
               "requests": {
                 "memory": "100M"
@@ -60,7 +60,21 @@
                 }
               }
             ],
+            "volumeMounts": [
+              {
+                "name": "redis-persistent-storage",
+                "mountPath": "/data"
+              }
+            ],
             "imagePullPolicy": "IfNotPresent"
+          }
+        ],
+        "volumes": [
+          {
+            "name": "redis-persistent-storage",
+            "persistentVolumeClaim": {
+              "claimName": "$idx_and_short_serviceid"
+            }
           }
         ],
         "restartPolicy": "Always",
