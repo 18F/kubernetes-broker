@@ -33,7 +33,7 @@
         "containers": [
           {
             "name": "k-mongodb32",
-            "image": "18fgsa/mongo:3.2",
+            "image": "18fgsa/mongo:3.2.10",
             "command": ["/scripts/run.sh", "--smallfiles", "--httpinterface"],
             "ports": [
               {
