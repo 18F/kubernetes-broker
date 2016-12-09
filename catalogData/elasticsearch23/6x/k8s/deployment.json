@@ -107,7 +107,7 @@
                 "mountPath": "/data"
               }
             ],
-            "imagePullPolicy": "IfNotPresent"
+            "imagePullPolicy": "Always"
           }
         ],
         "volumes": [
