@@ -1,0 +1,2 @@
+elasticfence.disabled: false
+elasticfence.root.password: ${ES_PASSWORD}
