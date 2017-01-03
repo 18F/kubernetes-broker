@@ -1,6 +1,6 @@
 {
   "id": "809fc3ae-1f0c-4e57-acc9-3d1d567d73aa",
   "name": "1x",
-  "description": "Elasticsearch instance with 1GB of RAM and 1 slices of CPU",
+  "description": "Elasticsearch instance with 1GB of RAM and 1 slice of CPU",
   "free": true
 }
