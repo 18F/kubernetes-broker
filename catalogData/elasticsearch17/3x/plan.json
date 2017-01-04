@@ -1,6 +1,6 @@
 {
   "id": "5cba56f0-37cf-4f15-9900-35f7b142bbdc",
   "name": "3x",
-  "description": "3G Memory / 3x CPU",
+  "description": "Elasticsearch instance with 3GB of RAM and 3 slices of CPU",
   "free": true
 }
