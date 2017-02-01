@@ -74,7 +74,7 @@
               },
               {
                 "name": "ES_HEAP_SIZE",
-                "value": "1g"
+                "value": "768m"
               },
               {
                 "name": "KUBERNETES_CERTS_CA_FILE",
