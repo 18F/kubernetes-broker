@@ -37,7 +37,7 @@
             "resources": {
               "limits": {
                 "memory": "13824M",
-                "cpu": 12
+                "cpu": 2
               }
             },
             "securityContext": {

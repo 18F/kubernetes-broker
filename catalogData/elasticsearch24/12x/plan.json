@@ -1,6 +1,6 @@
 {
   "id": "6d6d7c21-45b8-4b80-9b54-2dac3066759e",
   "name": "12x",
-  "description": "Elasticsearch instance with 12GB of RAM and 12 slices of CPU",
+  "description": "Elasticsearch instance with 12GB of RAM and 2 AWS vCPUs",
   "free": true
 }
