@@ -40,7 +40,7 @@
                 "memory": "512M"
               },
               "requests": {
-                "memory": "100M"
+                "memory": "0"
               }
             },
             "ports": [
