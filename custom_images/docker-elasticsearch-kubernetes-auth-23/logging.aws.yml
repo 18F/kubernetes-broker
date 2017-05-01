@@ -1,0 +1,4 @@
+# Ignore spurious warnings from aws-cloud plugin
+# https://github.com/elastic/elasticsearch/issues/14013
+com.amazonaws.jmx.SdkMBeanRegistrySupport: ERROR
+com.amazonaws.metrics.AwsSdkMetrics: ERROR

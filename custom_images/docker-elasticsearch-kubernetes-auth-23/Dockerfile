@@ -7,6 +7,7 @@ RUN /elasticsearch/bin/plugin install https://raw.githubusercontent.com/elasticf
 
 # Install AWS Cloud plugin
 RUN /elasticsearch/bin/plugin install https://download.elastic.co/elasticsearch/release/org/elasticsearch/plugin/cloud-aws/2.3.5/cloud-aws-2.3.5.zip
+ADD logging.aws.yml /elasticsearch/config/logging.aws.yml
 
 # Add elasticfence settings to config file
 ADD elasticfence.yml /elasticsearch/config/elasticfence.yml
