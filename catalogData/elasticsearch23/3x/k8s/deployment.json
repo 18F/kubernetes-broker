@@ -35,6 +35,10 @@
             "name": "k-elasticsearch23-persistent",
             "image": "18fgsa/docker-elasticsearch-kubernetes-auth:2.3.5",
             "resources": {
+              "requests": {
+                "memory": "1792M",
+                "cpu": "0"
+              },
               "limits": {
                 "memory": "3584M",
                 "cpu": 3
