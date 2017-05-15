@@ -60,6 +60,16 @@
                 }
               }
             ],
+            "livenessProbe": {
+              "exec": {
+                "command": [
+                  "redis-cli",
+                  "ping"
+                ]
+              },
+              "initialDelaySeconds": 30,
+              "timeoutSeconds": 5
+            },
             "volumeMounts": [
               {
                 "name": "redis-persistent-storage",
