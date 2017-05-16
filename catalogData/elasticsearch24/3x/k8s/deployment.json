@@ -52,7 +52,7 @@
             },
             "livenessProbe": {
               "exec": {
-                "command": [ "/bin/sh", "-c", "/usr/bin/wget http://localhost:9200/_cluster/health?pretty -q -O - | /bin/grep cluster_name" ]
+                "command": [ "/bin/sh", "-c", "timeout -t 5 /usr/bin/wget http://localhost:9200/_cluster/health?pretty -q -O - | /bin/grep cluster_name" ]
               },
               "initialDelaySeconds": 60,
               "timeoutSeconds": 15,
