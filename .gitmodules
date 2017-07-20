@@ -1,0 +1,4 @@
+[submodule "custom_images/redis"]
+	path = custom_images/redis
+	url = https://github.com/frodenas/docker-redis
+	branch = master
