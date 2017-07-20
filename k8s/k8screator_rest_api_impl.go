@@ -27,7 +27,7 @@ import (
 
 	"github.com/cloudfoundry-community/go-cfenv"
 	brokerHttp "github.com/trustedanalytics/kubernetes-broker/http"
-	"k8s.io/kubernetes/pkg/api"
+	v1 "k8s.io/api/core/v1"
 	"time"
 )
 
@@ -122,9 +122,9 @@ func (k *K8sCreatorConnector) CreateSecretForPrivateTapRepo(creds K8sClusterCred
 		return err
 	}
 
-	secret := api.Secret{}
+	secret := v1.Secret{}
 	secret.Name = "private-tap-repo-secret"
-	secret.Type = api.SecretTypeDockercfg
+	secret.Type = v1.SecretTypeDockercfg
 	secret.Data = map[string][]byte{}
 
 	secretValues := map[string]string{}
@@ -141,7 +141,7 @@ func (k *K8sCreatorConnector) CreateSecretForPrivateTapRepo(creds K8sClusterCred
 		return err
 	}
 
-	_, err = c.Secrets(api.NamespaceDefault).Create(&secret)
+	_, err = c.CoreV1().Secrets(v1.NamespaceDefault).Create(&secret)
 	if err != nil {
 		return err
 	}

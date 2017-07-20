@@ -22,7 +22,7 @@ import (
 	"strconv"
 	"strings"
 
-	"k8s.io/kubernetes/pkg/api"
+	apiv1 "k8s.io/api/core/v1"
 
 	"github.com/trustedanalytics/kubernetes-broker/catalog"
 	"github.com/trustedanalytics/kubernetes-broker/k8s"
@@ -152,7 +152,7 @@ func parsePorts(templateToParse string, svc ServiceCredential) (string, error) {
 	return templateToParse, nil
 }
 
-func getPort(templateToParse string, ports []api.ServicePort) (string, error) {
+func getPort(templateToParse string, ports []apiv1.ServicePort) (string, error) {
 	parsed_ports_list := splitPortsFromTemplate(templateToParse)
 
 	for _, parsed_port := range parsed_ports_list {

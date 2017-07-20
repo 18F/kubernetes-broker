@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"k8s.io/kubernetes/pkg/apis/batch"
+	batchv1 "k8s.io/api/batch/v1"
 )
 
 type JobType string
@@ -31,8 +31,8 @@ type TemplateMetadata struct {
 }
 
 type JobHook struct {
-	Type JobType   `json:"type"`
-	Job  batch.Job `json:"job"`
+	Type JobType     `json:"type"`
+	Job  batchv1.Job `json:"job"`
 }
 
 var TEMPLATES map[string]*TemplateMetadata

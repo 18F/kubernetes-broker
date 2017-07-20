@@ -20,16 +20,16 @@ import (
 	"sync"
 
 	"github.com/nu7hatch/gouuid"
-	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/apis/extensions"
+	appsv1beta1 "k8s.io/api/apps/v1beta1"
+	apiv1 "k8s.io/api/core/v1"
 )
 
 type DynamicService struct {
 	ServiceName        string                 `json:"serviceName"`
 	PlanName           string                 `json:"planName"`
 	IsPlanFree         bool                   `json:"isPlanFree"`
-	Containers         []api.Container        `json:"containers"`
-	ServicePorts       []api.ServicePort      `json:"servicePorts"`
+	Containers         []apiv1.Container      `json:"containers"`
+	ServicePorts       []apiv1.ServicePort    `json:"servicePorts"`
 	CredentialMappings map[string]interface{} `json:"credentialMappings"`
 }
 
@@ -160,7 +160,7 @@ func getParsedKubernetesBlueprint(componentTemplate KubernetesComponent, bluepri
 	return result, nil
 }
 
-func getParsedDeploymentJson(template extensions.Deployment, containersToParse []api.Container) (string, error) {
+func getParsedDeploymentJson(template appsv1beta1.Deployment, containersToParse []apiv1.Container) (string, error) {
 	template.Spec.Template.Spec.Containers = getParsedContainers(template.Spec.Template.Spec.Containers[0], containersToParse)
 	jsonDeployment, err := json.Marshal(template)
 	if err != nil {
@@ -170,8 +170,8 @@ func getParsedDeploymentJson(template extensions.Deployment, containersToParse [
 	return string(jsonDeployment), nil
 }
 
-func getParsedContainers(template api.Container, conteinersToParse []api.Container) []api.Container {
-	configuredContainers := []api.Container{}
+func getParsedContainers(template apiv1.Container, conteinersToParse []apiv1.Container) []apiv1.Container {
+	configuredContainers := []apiv1.Container{}
 	for _, userContainer := range conteinersToParse {
 		container := template
 		container.Ports = userContainer.Ports
@@ -184,7 +184,7 @@ func getParsedContainers(template api.Container, conteinersToParse []api.Contain
 	return configuredContainers
 }
 
-func getParsedServiceJson(template api.Service, servicePortsToParse []api.ServicePort) (string, error) {
+func getParsedServiceJson(template apiv1.Service, servicePortsToParse []apiv1.ServicePort) (string, error) {
 	template.Spec.Ports = servicePortsToParse
 	jsonSvc, err := json.Marshal(template)
 	if err != nil {

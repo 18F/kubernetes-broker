@@ -53,13 +53,13 @@ func WhatToCreateByServiceAndPlanId(service_id, plan_id string) (ServiceMetadata
 	//todo we need to check in postgres for dynamic services - we need to only add result to GetAvailableServicesMetadata()
 	svcMeta, err := GetServiceMetadataByServiceId(service_id)
 	if err != nil {
-		logger.Error(err)
+		logger.Error(err.Error())
 		return ServiceMetadata{}, PlanMetadata{}, err
 	}
 	logger.Info("Found service:", svcMeta)
 	planMeta, err := GetPlanMetadataByPlanIdInServiceMetadata(svcMeta, plan_id)
 	if err != nil {
-		logger.Error(err)
+		logger.Error(err.Error())
 		return svcMeta, PlanMetadata{}, err
 	}
 	logger.Info("Found plan:", planMeta)

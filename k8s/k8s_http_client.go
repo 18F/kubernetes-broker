@@ -20,93 +20,45 @@ import (
 	"strconv"
 
 	"github.com/cloudfoundry-community/go-cfenv"
-	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/apimachinery/registered"
-	"k8s.io/kubernetes/pkg/client/restclient"
-	k8sClient "k8s.io/kubernetes/pkg/client/unversioned"
-	"k8s.io/kubernetes/pkg/client/unversioned/testclient"
-	"k8s.io/kubernetes/pkg/runtime"
-	"k8s.io/kubernetes/pkg/watch"
+	apiv1 "k8s.io/api/core/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/rest"
+	testcore "k8s.io/client-go/testing"
 
 	brokerHttp "github.com/trustedanalytics/kubernetes-broker/http"
 	"github.com/trustedanalytics/kubernetes-broker/logger"
 )
 
-// we need this redundant interface to be able to inject TestClient in Test class
-type KubernetesClient interface {
-	Nodes() k8sClient.NodeInterface
-	Events(namespace string) k8sClient.EventInterface
-	Endpoints(namespace string) k8sClient.EndpointsInterface
-	Pods(namespace string) k8sClient.PodInterface
-	PodTemplates(namespace string) k8sClient.PodTemplateInterface
-	Services(namespace string) k8sClient.ServiceInterface
-	LimitRanges(namespace string) k8sClient.LimitRangeInterface
-	ResourceQuotas(namespace string) k8sClient.ResourceQuotaInterface
-	ServiceAccounts(namespace string) k8sClient.ServiceAccountsInterface
-	Secrets(namespace string) k8sClient.SecretsInterface
-	Namespaces() k8sClient.NamespaceInterface
-	PersistentVolumes() k8sClient.PersistentVolumeInterface
-	PersistentVolumeClaims(namespace string) k8sClient.PersistentVolumeClaimInterface
-	ComponentStatuses() k8sClient.ComponentStatusInterface
-	ConfigMaps(namespace string) k8sClient.ConfigMapsInterface
-}
-
-type ExtensionsInterface interface {
-	Scales(namespace string) k8sClient.ScaleInterface
-	DaemonSets(namespace string) k8sClient.DaemonSetInterface
-	Deployments(namespace string) k8sClient.DeploymentInterface
-	Jobs(namespace string) k8sClient.JobInterface
-	Ingress(namespace string) k8sClient.IngressInterface
-	ThirdPartyResources() k8sClient.ThirdPartyResourceInterface
-	ReplicaSets(namespace string) k8sClient.ReplicaSetInterface
-	PodSecurityPolicies() k8sClient.PodSecurityPolicyInterface
-}
-
 type KubernetesClientCreator interface {
-	GetNewClient(creds K8sClusterCredentials) (KubernetesClient, error)
-	GetNewExtensionsClient(creds K8sClusterCredentials) (ExtensionsInterface, error)
+	GetNewClient(creds K8sClusterCredentials) (kubernetes.Interface, error)
 }
 
 type KubernetesRestCreator struct{}
 
 type KubernetesTestCreator struct {
-	testClient          *testclient.Fake
-	testExtensionClient *testclient.FakeExperimental
+	testClient *fake.Clientset
 }
 
 var logger = logger_wrapper.InitLogger("k8s")
 
-func (k *KubernetesRestCreator) GetNewClient(creds K8sClusterCredentials) (KubernetesClient, error) {
+func (k *KubernetesRestCreator) GetNewClient(creds K8sClusterCredentials) (kubernetes.Interface, error) {
+	var err error
+	var config *rest.Config
 	if creds.Server == "" {
-		// get default K8s api client from same cluster as pod's
-		return k8sClient.NewInCluster()
+		config, err = rest.InClusterConfig()
 	} else {
-		config, err := getKubernetesConfig(creds)
-		if err != nil {
-			return nil, err
-		}
-		return k8sClient.New(config)
+		config, err = getKubernetesConfig(creds)
 	}
+	if err != nil {
+		return nil, err
+	}
+	return kubernetes.NewForConfig(config)
 }
 
-func (k *KubernetesRestCreator) GetNewExtensionsClient(creds K8sClusterCredentials) (ExtensionsInterface, error) {
-	if creds.Server == "" {
-		// get default K8s api client from same cluster as pod's
-		config, err := restclient.InClusterConfig()
-		if err != nil {
-			return nil, err
-		}
-		return k8sClient.NewExtensions(config)
-	} else {
-		config, err := getKubernetesConfig(creds)
-		if err != nil {
-			return nil, err
-		}
-		return k8sClient.NewExtensions(config)
-	}
-}
-
-func getKubernetesConfig(creds K8sClusterCredentials) (*restclient.Config, error) {
+func getKubernetesConfig(creds K8sClusterCredentials) (*rest.Config, error) {
 	sslActive, parseError := strconv.ParseBool(cfenv.CurrentEnv()["KUBE_SSL_ACTIVE"])
 	if parseError != nil {
 		logger.Error("KUBE_SSL_ACTIVE env probably not set!")
@@ -126,21 +78,16 @@ func getKubernetesConfig(creds K8sClusterCredentials) (*restclient.Config, error
 		return nil, err
 	}
 
-	config := &restclient.Config{
+	return &rest.Config{
 		Host:      creds.Server,
 		Username:  creds.Username,
 		Password:  creds.Password,
 		Transport: transport,
-	}
-	return config, nil
+	}, nil
 }
 
-func (k *KubernetesTestCreator) GetNewClient(creds K8sClusterCredentials) (KubernetesClient, error) {
+func (k *KubernetesTestCreator) GetNewClient(creds K8sClusterCredentials) (kubernetes.Interface, error) {
 	return k.testClient, nil
-}
-
-func (k *KubernetesTestCreator) GetNewExtensionsClient(creds K8sClusterCredentials) (ExtensionsInterface, error) {
-	return k.testExtensionClient, nil
 }
 
 /*
@@ -148,44 +95,11 @@ func (k *KubernetesTestCreator) GetNewExtensionsClient(creds K8sClusterCredentia
 	All objects should do same action e.g. list/update/create
 */
 func (k *KubernetesTestCreator) LoadSimpleResponsesWithSameAction(responseObjects ...runtime.Object) {
-	k.testClient = testclient.NewSimpleFake(responseObjects...)
+	k.testClient = fake.NewSimpleClientset(responseObjects...)
 }
 
-func (k *KubernetesTestCreator) LoadSimpleResponsesWithSameActionForExtensionsClient(responeObjects ...runtime.Object) {
-	k.testExtensionClient = testclient.NewSimpleFakeExp(responeObjects...)
-}
-
-type KubernetesTestAdvancedParams struct {
-	Verb            string
-	Resource        string
-	ResponceObjects []runtime.Object
-}
-
-/*
-	This method allow to inject response object dependly of their action
-*/
-func (k *KubernetesTestCreator) LoadAdvancedResponses(params []KubernetesTestAdvancedParams) {
-	fakeClient := &testclient.Fake{}
-
-	for _, param := range params {
-		o := testclient.NewObjects(api.Scheme, api.Codecs.UniversalDecoder())
-		for _, obj := range param.ResponceObjects {
-			if err := o.Add(obj); err != nil {
-				panic(err)
-			}
-		}
-		verb := param.Verb
-		if param.Verb == "" {
-			verb = "*"
-		}
-
-		resource := param.Resource
-		if param.Resource == "" {
-			resource = "*"
-		}
-		fakeClient.AddReactor(verb, resource, testclient.ObjectReaction(o, registered.RESTMapper()))
-	}
-
-	fakeClient.AddWatchReactor("*", testclient.DefaultWatchReactor(watch.NewFake(), nil))
-	k.testClient = fakeClient
+func (k *KubernetesTestCreator) LoadErrorResponse(resourceName string) {
+	k.testClient.PrependReactor("*", "*", func(action testcore.Action) (handled bool, ret runtime.Object, err error) {
+		return true, nil, k8sErrors.NewForbidden(apiv1.Resource(resourceName), "", nil)
+	})
 }
