@@ -86,6 +86,7 @@ func TestFabricateService(t *testing.T) {
 				mockStateService.EXPECT().ReportProgress(serviceId, "IN_PROGRESS_CREATING_SECRET0", nil),
 				mockStateService.EXPECT().ReportProgress(serviceId, "IN_PROGRESS_CREATING_PERSIST_VOL_CLAIMS", nil),
 				mockStateService.EXPECT().ReportProgress(serviceId, "IN_PROGRESS_CREATING_PERSIST_VOL_CLAIM0", nil),
+				mockStateService.EXPECT().ReportProgress(serviceId, "IN_PROGRESS_CREATING_STATEFULSETS", nil),
 				mockStateService.EXPECT().ReportProgress(serviceId, "IN_PROGRESS_CREATING_DEPLOYMENTS", nil),
 				mockStateService.EXPECT().ReportProgress(serviceId, "IN_PROGRESS_CREATING_DEPLOYMENT0", nil),
 				mockStateService.EXPECT().ReportProgress(serviceId, "IN_PROGRESS_CREATING_SVCS", nil),

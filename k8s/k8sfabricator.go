@@ -133,6 +133,20 @@ func (k *K8Fabricator) FabricateService(creds K8sClusterCredentials, space, cf_s
 		}
 	}
 
+	ss.ReportProgress(cf_service_id, "IN_PROGRESS_CREATING_STATEFULSETS", nil)
+	for idx, statefulSet := range component.StatefulSets {
+		ss.ReportProgress(cf_service_id, "IN_PROGRESS_CREATING_STATEFULSET"+strconv.Itoa(idx), nil)
+		for i, container := range statefulSet.Spec.Template.Spec.Containers {
+			statefulSet.Spec.Template.Spec.Containers[i].Env = append(container.Env, extraEnvironments...)
+		}
+
+		_, err = client.AppsV1beta1().StatefulSets(apiv1.NamespaceDefault).Create(statefulSet)
+		if err != nil {
+			ss.ReportProgress(cf_service_id, "FAILED", err)
+			return result, err
+		}
+	}
+
 	ss.ReportProgress(cf_service_id, "IN_PROGRESS_CREATING_DEPLOYMENTS", nil)
 	for idx, deployment := range component.Deployments {
 		ss.ReportProgress(cf_service_id, "IN_PROGRESS_CREATING_DEPLOYMENT"+strconv.Itoa(idx), nil)
@@ -355,6 +369,27 @@ func (k *K8Fabricator) DeleteAllByServiceId(creds K8sClusterCredentials, service
 		err = client.CoreV1().Services(apiv1.NamespaceDefault).Delete(name, &metav1.DeleteOptions{})
 		if err != nil {
 			logger.Error("[DeleteAllByServiceId] Delete service failed:", err)
+			return err
+		}
+	}
+
+	statefulSets, err := client.AppsV1beta1().StatefulSets(apiv1.NamespaceDefault).List(metav1.ListOptions{
+		LabelSelector: selector,
+	})
+	if err != nil {
+		logger.Error("[DeleteAllByServiceId] List statefulsets failed:", err)
+		return err
+	}
+	for _, statefulSet := range statefulSets.Items {
+		name = statefulSet.ObjectMeta.Name
+		logger.Debug("[DeleteAllByServiceId] Delete statefulset:", name)
+
+		foreground := metav1.DeletePropagationForeground
+		err = client.AppsV1beta1().StatefulSets(apiv1.NamespaceDefault).Delete(name, &metav1.DeleteOptions{
+			PropagationPolicy: &foreground,
+		})
+		if err != nil {
+			logger.Error("[DeleteAllByServiceId] Delete statefulset failed:", err)
 			return err
 		}
 	}
