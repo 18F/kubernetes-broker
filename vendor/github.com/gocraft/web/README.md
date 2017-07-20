@@ -245,23 +245,6 @@ You can also validate the format of your path params with a regexp. For instance
 router.Get("/suggestions/:suggestion_id:\\d.*/comments/:comment_id:\\d.*")
 ```
 
-You can match any route past a certain point like this:
-
-```go
-router.Get("/suggestions/:suggestion_id/comments/:comment_id/:*")
-```
-
-The path params will contain a “*” member with the rest of your path.  It is illegal to add any more paths past the “*” path param, as it’s meant to match every path afterwards, in all cases.
-
-For Example:
-    /suggestions/123/comments/321/foo/879/bar/834
-
-Elicits path params:
-    * “suggestion_id”: 123,
-    * “comment_id”: 321,
-    * “*”: “foo/879/bar/834”
-
-
 One thing you CANNOT currently do is use regexps outside of a path segment. For instance, optional path segments are not supported - you would have to define multiple routes that both point to the same handler. This design decision was made to enable efficient routing.
 
 ### Not Found handlers
@@ -279,24 +262,6 @@ Your handler can optionally accept a pointer to the root context. NotFound handl
 func (c *Context) NotFound(rw web.ResponseWriter, r *web.Request) {
 	rw.WriteHeader(http.StatusNotFound) // You probably want to return 404. But you can also redirect or do whatever you want.
 	fmt.Fprintf(rw, "My Not Found")     // Render you own HTML or something!
-}
-```
-
-### OPTIONS handlers
-If an [OPTIONS request](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing#Preflight_example) is made and routes with other methods are found for the requested path, then by default we'll return an empty response with an appropriate `Access-Control-Allow-Methods` header.
-
-You can supply a custom OPTIONS handler on your root router:
-
-```go
-router.OptionsHandler((*Context).OptionsHandler)
-```
-
-Your handler can optionally accept a pointer to the root context. OPTIONS handlers look like this:
-
-```go
-func (c *Context) OptionsHandler(rw web.ResponseWriter, r *web.Request, methods []string) {
-	rw.Header().Add("Access-Control-Allow-Methods", strings.Join(methods, ", "))
-	rw.Header().Add("Access-Control-Allow-Origin", "*")
 }
 ```
 
@@ -326,14 +291,8 @@ We ship with three basic pieces of middleware: a logger, an exception printer, a
 ```go
 router := web.New(Context{})
 router.Middleware(web.LoggerMiddleware).
-	Middleware(web.ShowErrorsMiddleware)
-
-// The static middleware serves files. Examples:
-// "GET /" will serve an index file at pwd/public/index.html
-// "GET /robots.txt" will serve the file at pwd/public/robots.txt
-// "GET /images/foo.gif" will serve the fiel at pwd/public/images/foo.gif
-currentRoot, _ := os.Getwd()
-router.Middleware(web.StaticMiddleware(path.Join(currentRoot, "public"), web.StaticOption{IndexFile: "index.html"}))
+	Middleware(web.ShowErrorsMiddleware).
+	Middleware(web.StaticMiddleware("public")) // "public" is a directory to serve files from.
 ```
 
 NOTE: You might not want to use web.ShowErrorsMiddleware in production. You can easily do something like this:
@@ -368,19 +327,8 @@ This is currently where the implementation of this library stops. I recommend yo
 ## Extra Middlware
 This package is going to keep the built-in middlware simple and lean. Extra middleware can be found across the web:
 *  [https://github.com/opennota/json-binding](https://github.com/opennota/json-binding) - mapping JSON request into a struct
-*  [https://github.com/corneldamian/json-binding](https://github.com/corneldamian/json-binding) - mapping JSON request into a struct and response to json
 
 If you'd like me to link to your middleware, let me know with a pull request to this README.
-
-## gocraft
-
-gocraft offers a toolkit for building web apps. Currently these packages are available:
-
-* [gocraft/web](https://github.com/gocraft/web) - Go Router + Middleware. Your Contexts.
-* [gocraft/dbr](https://github.com/gocraft/dbr) - Additions to Go's database/sql for super fast performance and convenience.
-* [gocraft/health](https://github.com/gocraft/health) -  Instrument your web apps with logging and metrics.
-
-These packages were developed by the [engineering team](https://eng.uservoice.com) at [UserVoice](https://www.uservoice.com) and currently power much of its infrastructure and tech stack.
 
 ## Thanks & Authors
 I use code/got inspiration from these excellent libraries:
@@ -391,4 +339,3 @@ I use code/got inspiration from these excellent libraries:
 
 Authors:
 *  Jonathan Novak -- [https://github.com/cypriss](https://github.com/cypriss)
-*  Sponsored by [UserVoice](https://eng.uservoice.com)
