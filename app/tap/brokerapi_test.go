@@ -32,8 +32,9 @@ import (
 	"github.com/gocraft/web"
 	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
-	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/apis/extensions"
+	appsv1beta1 "k8s.io/api/apps/v1beta1"
+	apiv1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/trustedanalytics/kubernetes-broker/catalog"
 	"github.com/trustedanalytics/kubernetes-broker/consul"
@@ -273,7 +274,7 @@ func TestServiceInstancesDelete(t *testing.T) {
 				mockCreatorConnector.EXPECT().GetCluster(tst.TestOrgGuid).Return(200, testCreds, nil),
 				mockKubernetesApi.EXPECT().DeleteAllByServiceId(testCreds, testId).Return(nil),
 				mockKubernetesApi.EXPECT().GetServices(testCreds, tst.TestOrgGuid).Return(nil, nil),
-				mockKubernetesApi.EXPECT().ListDeployments(testCreds).Return(&extensions.DeploymentList{}, nil),
+				mockKubernetesApi.EXPECT().ListDeployments(testCreds).Return(&appsv1beta1.DeploymentList{}, nil),
 				mockKubernetesApi.EXPECT().DeleteAllPersistentVolumeClaims(testCreds).Return(nil),
 				mockKubernetesApi.EXPECT().GetAllPersistentVolumes(testCreds).Return(nil, nil),
 				mockCreatorConnector.EXPECT().DeleteCluster(tst.TestOrgGuid).Return(nil),
@@ -290,13 +291,13 @@ func TestServiceInstancesDelete(t *testing.T) {
 				mockCreatorConnector.EXPECT().GetCluster(tst.TestOrgGuid).Return(200, testCreds, nil),
 				mockKubernetesApi.EXPECT().DeleteAllByServiceId(testCreds, testId).Return(nil),
 				mockKubernetesApi.EXPECT().GetServices(testCreds, tst.TestOrgGuid).Return(nil, nil),
-				mockKubernetesApi.EXPECT().ListDeployments(testCreds).Return(&extensions.DeploymentList{}, nil),
+				mockKubernetesApi.EXPECT().ListDeployments(testCreds).Return(&appsv1beta1.DeploymentList{}, nil),
 				mockKubernetesApi.EXPECT().DeleteAllPersistentVolumeClaims(testCreds).Return(nil),
 				// return one PV to fore waitingon EBS action
-				mockKubernetesApi.EXPECT().GetAllPersistentVolumes(testCreds).Return([]api.PersistentVolume{{}}, nil),
+				mockKubernetesApi.EXPECT().GetAllPersistentVolumes(testCreds).Return([]apiv1.PersistentVolume{{}}, nil),
 
 				mockKubernetesApi.EXPECT().GetServices(testCreds, tst.TestOrgGuid).Return(nil, nil),
-				mockKubernetesApi.EXPECT().ListDeployments(testCreds).Return(&extensions.DeploymentList{}, nil),
+				mockKubernetesApi.EXPECT().ListDeployments(testCreds).Return(&appsv1beta1.DeploymentList{}, nil),
 				mockKubernetesApi.EXPECT().DeleteAllPersistentVolumeClaims(testCreds).Return(nil),
 				mockKubernetesApi.EXPECT().GetAllPersistentVolumes(testCreds).Return(nil, nil),
 				mockCreatorConnector.EXPECT().DeleteCluster(tst.TestOrgGuid).Return(nil),
@@ -312,8 +313,8 @@ func TestServiceInstancesDelete(t *testing.T) {
 				mockCloudAPi.EXPECT().GetOrgIdAndSpaceIdFromCfByServiceInstanceId(testId).Return(tst.TestOrgGuid, tst.TestSpaceGuid, nil),
 				mockCreatorConnector.EXPECT().GetCluster(tst.TestOrgGuid).Return(200, testCreds, nil),
 				mockKubernetesApi.EXPECT().DeleteAllByServiceId(testCreds, testId).Return(nil),
-				mockKubernetesApi.EXPECT().GetServices(testCreds, tst.TestOrgGuid).Return([]api.Service{api.Service{}}, nil),
-				mockKubernetesApi.EXPECT().ListDeployments(testCreds).Return(&extensions.DeploymentList{}, nil),
+				mockKubernetesApi.EXPECT().GetServices(testCreds, tst.TestOrgGuid).Return([]apiv1.Service{apiv1.Service{}}, nil),
+				mockKubernetesApi.EXPECT().ListDeployments(testCreds).Return(&appsv1beta1.DeploymentList{}, nil),
 			)
 
 			rr := sendRequest("DELETE", URLserviceInstancePath+testId, nil, r)
@@ -368,7 +369,7 @@ func TestServiceBindingsPut(t *testing.T) {
 					Return([]k8s.PodEnvs{
 						{Containers: []k8s.ContainerSimple{{Envs: map[string]string{"foo": "bar"}}}},
 					}, nil),
-				mockKubernetesApi.EXPECT().GetService(testCreds, tst.TestSpaceGuid, testInstanceId).Return([]api.Service{{}}, nil),
+				mockKubernetesApi.EXPECT().GetService(testCreds, tst.TestSpaceGuid, testInstanceId).Return([]apiv1.Service{{}}, nil),
 			)
 
 			putRequestBody := ServiceBindingsPutRequest{ServiceId: &tmpTestServiceId, PlanId: &tmpTestPlanId}
@@ -421,7 +422,7 @@ func TestServiceBindingsPut(t *testing.T) {
 				mockKubernetesApi.EXPECT().GetAllPodsEnvsByServiceId(testCreds, tst.TestSpaceGuid, testInstanceId).
 					Return([]k8s.PodEnvs{}, nil),
 				mockKubernetesApi.EXPECT().GetService(testCreds, tst.TestSpaceGuid, testInstanceId).
-					Return([]api.Service{}, errors.New("No Port")),
+					Return([]apiv1.Service{}, errors.New("No Port")),
 			)
 
 			putRequestBody := ServiceBindingsPutRequest{ServiceId: &tmpTestServiceId, PlanId: &tmpTestPlanId}
@@ -456,8 +457,8 @@ func TestGetService(t *testing.T) {
 		"tap-public": "true",
 	}
 
-	serviceResponse := []api.Service{{
-		ObjectMeta: api.ObjectMeta{
+	serviceResponse := []apiv1.Service{{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:        testName,
 			Labels:      map[string]string{},
 			Annotations: annotations,
@@ -506,8 +507,8 @@ func TestGetServices(t *testing.T) {
 	requestPath := "/rest/kubernetes/" + tst.TestOrgGuid + "/" + tst.TestSpaceGuid + "/services"
 
 	testName := "name21"
-	serviceResponse := []api.Service{{
-		ObjectMeta: api.ObjectMeta{
+	serviceResponse := []apiv1.Service{{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:   testName,
 			Labels: map[string]string{},
 		},
@@ -562,14 +563,14 @@ func TestSetServiceVisibility(t *testing.T) {
 	annotations := map[string]string{
 		"tap-public": "true",
 	}
-	serviceResponse := []api.Service{{
-		ObjectMeta: api.ObjectMeta{
+	serviceResponse := []apiv1.Service{{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:        testName,
 			Labels:      map[string]string{},
 			Annotations: annotations,
 		},
-		Spec: api.ServiceSpec{
-			Ports: []api.ServicePort{{Protocol: api.ProtocolTCP, Port: 5555}},
+		Spec: apiv1.ServiceSpec{
+			Ports: []apiv1.ServicePort{{Protocol: apiv1.ProtocolTCP, Port: 5555}},
 		},
 	}}
 
@@ -622,7 +623,7 @@ func TestGetSecret(t *testing.T) {
 			rr := sendRequest("GET", requestPath, nil, r)
 			assertResponse(rr, "", 200)
 
-			apiResponse := api.Secret{}
+			apiResponse := apiv1.Secret{}
 			err := readJson(rr, &apiResponse)
 
 			So(err, ShouldBeNil)
@@ -632,7 +633,7 @@ func TestGetSecret(t *testing.T) {
 		Convey("Should returns failed response", func() {
 			mockCreatorConnector.EXPECT().GetCluster(tst.TestOrgGuid).Return(200, testCreds, nil)
 			mockKubernetesApi.EXPECT().GetSecret(testCreds, tst.TestSecretName).Return(
-				&api.Secret{}, testError)
+				&apiv1.Secret{}, testError)
 
 			rr := sendRequest("GET", requestPath, nil, r)
 			assertResponse(rr, "", 500)

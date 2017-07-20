@@ -20,7 +20,7 @@ import (
 	"os"
 	"regexp"
 
-	"k8s.io/kubernetes/pkg/api"
+	apiv1 "k8s.io/api/core/v1"
 
 	"github.com/trustedanalytics/kubernetes-broker/logger"
 )
@@ -55,9 +55,10 @@ func GetTestSecretData() []byte {
 	return []byte("dGVzdA==")
 }
 
-func GetTestSecret() api.Secret {
-	secret := api.Secret{}
+func GetTestSecret() apiv1.Secret {
+	secret := apiv1.Secret{}
 	secret.Name = testSecretName
+	secret.ObjectMeta.Namespace = "default"
 	data := make(map[string][]byte)
 	data[testSecretName] = GetTestSecretData()
 	secret.Data = data

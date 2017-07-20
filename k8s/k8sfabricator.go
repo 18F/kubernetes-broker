@@ -23,11 +23,13 @@ import (
 	"strconv"
 	"strings"
 
-	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/apis/batch"
-	"k8s.io/kubernetes/pkg/apis/extensions"
-	"k8s.io/kubernetes/pkg/labels"
-	"k8s.io/kubernetes/pkg/util/sets"
+	appsv1beta1 "k8s.io/api/apps/v1beta1"
+	batchv1 "k8s.io/api/batch/v1"
+	apiv1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/trustedanalytics/kubernetes-broker/catalog"
 	"github.com/trustedanalytics/kubernetes-broker/state"
@@ -39,19 +41,19 @@ type KubernetesApi interface {
 	CheckKubernetesServiceHealthByServiceInstanceId(creds K8sClusterCredentials, space, instance_id string) (bool, error)
 	DeleteAllByServiceId(creds K8sClusterCredentials, service_id string) error
 	DeleteAllPersistentVolumeClaims(creds K8sClusterCredentials) error
-	GetAllPersistentVolumes(creds K8sClusterCredentials) ([]api.PersistentVolume, error)
+	GetAllPersistentVolumes(creds K8sClusterCredentials) ([]apiv1.PersistentVolume, error)
 	GetAllPodsEnvsByServiceId(creds K8sClusterCredentials, space, service_id string) ([]PodEnvs, error)
-	GetService(creds K8sClusterCredentials, org, serviceId string) ([]api.Service, error)
-	GetServices(creds K8sClusterCredentials, org string) ([]api.Service, error)
-	GetQuota(creds K8sClusterCredentials, space string) (*api.ResourceQuotaList, error)
+	GetService(creds K8sClusterCredentials, org, serviceId string) ([]apiv1.Service, error)
+	GetServices(creds K8sClusterCredentials, org string) ([]apiv1.Service, error)
+	GetQuota(creds K8sClusterCredentials, space string) (*apiv1.ResourceQuotaList, error)
 	GetClusterWorkers(creds K8sClusterCredentials) ([]string, error)
 	GetPodsStateByServiceId(creds K8sClusterCredentials, service_id string) ([]PodStatus, error)
 	GetPodsStateForAllServices(creds K8sClusterCredentials) (map[string][]PodStatus, error)
-	ListDeployments(creds K8sClusterCredentials) (*extensions.DeploymentList, error)
-	GetSecret(creds K8sClusterCredentials, key string) (*api.Secret, error)
-	CreateSecret(creds K8sClusterCredentials, secret api.Secret) error
+	ListDeployments(creds K8sClusterCredentials) (*appsv1beta1.DeploymentList, error)
+	GetSecret(creds K8sClusterCredentials, key string) (*apiv1.Secret, error)
+	CreateSecret(creds K8sClusterCredentials, secret apiv1.Secret) error
 	DeleteSecret(creds K8sClusterCredentials, key string) error
-	UpdateSecret(creds K8sClusterCredentials, secret api.Secret) error
+	UpdateSecret(creds K8sClusterCredentials, secret apiv1.Secret) error
 	ProcessJobsResult(creds K8sClusterCredentials, ss state.StateService) error
 	CreateJobsByType(creds K8sClusterCredentials, jobs []*catalog.JobHook, serviceId string, jobType catalog.JobType, ss state.StateService) error
 }
@@ -85,14 +87,14 @@ func (k *K8Fabricator) FabricateService(creds K8sClusterCredentials, space, cf_s
 	ss state.StateService, component *catalog.KubernetesComponent) (FabricateResult, error) {
 	result := FabricateResult{"", map[string]string{}}
 
-	client, extensionsClient, err := k.getKubernetesClientAndExtensionClient(creds)
+	client, err := k.KubernetesClient.GetNewClient(creds)
 	if err != nil {
 		return result, err
 	}
 
-	extraEnvironments := []api.EnvVar{{Name: "TAP_K8S", Value: "true"}}
+	extraEnvironments := []apiv1.EnvVar{{Name: "TAP_K8S", Value: "true"}}
 	if parameters != "" {
-		extraUserParam := api.EnvVar{}
+		extraUserParam := apiv1.EnvVar{}
 		err := json.Unmarshal([]byte(parameters), &extraUserParam)
 		if err != nil {
 			logger.Error("[FabricateService] Unmarshalling extra user parameters error!", err)
@@ -114,7 +116,7 @@ func (k *K8Fabricator) FabricateService(creds K8sClusterCredentials, space, cf_s
 	ss.ReportProgress(cf_service_id, "IN_PROGRESS_CREATING_SECRETS", nil)
 	for idx, sc := range component.Secrets {
 		ss.ReportProgress(cf_service_id, "IN_PROGRESS_CREATING_SECRET"+strconv.Itoa(idx), nil)
-		_, err = client.Secrets(api.NamespaceDefault).Create(sc)
+		_, err = client.CoreV1().Secrets(metav1.NamespaceDefault).Create(sc)
 		if err != nil {
 			ss.ReportProgress(cf_service_id, "FAILED", err)
 			return result, err
@@ -124,7 +126,7 @@ func (k *K8Fabricator) FabricateService(creds K8sClusterCredentials, space, cf_s
 	ss.ReportProgress(cf_service_id, "IN_PROGRESS_CREATING_PERSIST_VOL_CLAIMS", nil)
 	for idx, claim := range component.PersistentVolumeClaims {
 		ss.ReportProgress(cf_service_id, "IN_PROGRESS_CREATING_PERSIST_VOL_CLAIM"+strconv.Itoa(idx), nil)
-		_, err = client.PersistentVolumeClaims(api.NamespaceDefault).Create(claim)
+		_, err = client.CoreV1().PersistentVolumeClaims(apiv1.NamespaceDefault).Create(claim)
 		if err != nil {
 			ss.ReportProgress(cf_service_id, "FAILED", err)
 			return result, err
@@ -138,7 +140,7 @@ func (k *K8Fabricator) FabricateService(creds K8sClusterCredentials, space, cf_s
 			deployment.Spec.Template.Spec.Containers[i].Env = append(container.Env, extraEnvironments...)
 		}
 
-		_, err = extensionsClient.Deployments(api.NamespaceDefault).Create(deployment)
+		_, err = client.AppsV1beta1().Deployments(apiv1.NamespaceDefault).Create(deployment)
 		if err != nil {
 			ss.ReportProgress(cf_service_id, "FAILED", err)
 			return result, err
@@ -148,7 +150,7 @@ func (k *K8Fabricator) FabricateService(creds K8sClusterCredentials, space, cf_s
 	ss.ReportProgress(cf_service_id, "IN_PROGRESS_CREATING_SVCS", nil)
 	for idx, svc := range component.Services {
 		ss.ReportProgress(cf_service_id, "IN_PROGRESS_CREATING_SVC"+strconv.Itoa(idx), nil)
-		_, err = client.Services(api.NamespaceDefault).Create(svc)
+		_, err = client.CoreV1().Services(apiv1.NamespaceDefault).Create(svc)
 		if err != nil {
 			ss.ReportProgress(cf_service_id, "FAILED", err)
 			return result, err
@@ -158,7 +160,7 @@ func (k *K8Fabricator) FabricateService(creds K8sClusterCredentials, space, cf_s
 	ss.ReportProgress(cf_service_id, "IN_PROGRESS_CREATING_ACCS", nil)
 	for idx, acc := range component.ServiceAccounts {
 		ss.ReportProgress(cf_service_id, "IN_PROGRESS_CREATING_ACC"+strconv.Itoa(idx), nil)
-		_, err = client.ServiceAccounts(api.NamespaceDefault).Create(acc)
+		_, err = client.CoreV1().ServiceAccounts(apiv1.NamespaceDefault).Create(acc)
 		if err != nil {
 			ss.ReportProgress(cf_service_id, "FAILED", err)
 			return result, err
@@ -171,14 +173,14 @@ func (k *K8Fabricator) FabricateService(creds K8sClusterCredentials, space, cf_s
 
 func (k *K8Fabricator) CreateJobsByType(creds K8sClusterCredentials, jobs []*catalog.JobHook, serviceId string,
 	jobType catalog.JobType, ss state.StateService) error {
-	c, err := k.KubernetesClient.GetNewExtensionsClient(creds)
+	client, err := k.KubernetesClient.GetNewClient(creds)
 	if err != nil {
 		return err
 	}
 
 	for _, jobHook := range jobs {
 		if jobHook.Type == jobType {
-			_, err = c.Jobs(api.NamespaceDefault).Create(&jobHook.Job)
+			_, err = client.BatchV1().Jobs(apiv1.NamespaceDefault).Create(&jobHook.Job)
 			if err != nil {
 				ss.NotifyCatalog(serviceId, fmt.Sprintf("Create job error! Job type: %s", jobHook.Type), err)
 				return err
@@ -191,7 +193,7 @@ func (k *K8Fabricator) CreateJobsByType(creds K8sClusterCredentials, jobs []*cat
 
 func (k *K8Fabricator) ProcessJobsResult(creds K8sClusterCredentials, ss state.StateService) error {
 	logger.Debug("Processing jobs...")
-	client, extensionsClient, err := k.getKubernetesClientAndExtensionClient(creds)
+	client, err := k.KubernetesClient.GetNewClient(creds)
 	if err != nil {
 		logger.Error("getKubernetesClientAndExtensionClient error:", err)
 		return err
@@ -202,7 +204,7 @@ func (k *K8Fabricator) ProcessJobsResult(creds K8sClusterCredentials, ss state.S
 		return err
 	}
 
-	jobs, err := extensionsClient.Jobs(api.NamespaceDefault).List(api.ListOptions{
+	jobs, err := client.BatchV1().Jobs(apiv1.NamespaceDefault).List(metav1.ListOptions{
 		LabelSelector: selector,
 	})
 	if err != nil {
@@ -231,14 +233,14 @@ jobs:
 			ss.NotifyCatalog(serviceId, fmt.Sprintf("Job with name: %s and serviceId: %s FAILED! Pod logs:", job.Name, serviceId), err)
 		}
 		if job.Status.Succeeded > 0 && job.Annotations["createConfigMap"] == "true" {
-			_, err = client.ConfigMaps(api.NamespaceDefault).Create(getConfigMapFromLogs(job, logs))
+			_, err = client.CoreV1().ConfigMaps(apiv1.NamespaceDefault).Create(getConfigMapFromLogs(job, logs))
 			if err != nil {
 				ss.NotifyCatalog(serviceId, fmt.Sprintf("Can't save Jobs credentials! Job name: %s, serviceId: %s. Logs: %v", job.Name, serviceId, logs), err)
 			} else {
 				ss.NotifyCatalog(serviceId, fmt.Sprintf("Job with name: %s and serviceId: %s SAVED SUCCESSFULLY in ConfMap!", job.Name, serviceId), err)
 			}
 		}
-		err = extensionsClient.Jobs(api.NamespaceDefault).Delete(job.Name, &api.DeleteOptions{})
+		err = client.BatchV1().Jobs(apiv1.NamespaceDefault).Delete(job.Name, &metav1.DeleteOptions{})
 		if err != nil {
 			ss.NotifyCatalog(serviceId, fmt.Sprintf("Delete Job ERROR! Job name: %s, serviceId: %s", job.Name, serviceId), err)
 		} else {
@@ -248,9 +250,9 @@ jobs:
 	return nil
 }
 
-func getPodsLogs(client KubernetesClient, selector labels.Selector) (map[string]string, error) {
+func getPodsLogs(client kubernetes.Interface, selector string) (map[string]string, error) {
 	result := map[string]string{}
-	pods, err := client.Pods(api.NamespaceDefault).List(api.ListOptions{
+	pods, err := client.CoreV1().Pods(apiv1.NamespaceDefault).List(metav1.ListOptions{
 		LabelSelector: selector,
 	})
 	if err != nil {
@@ -258,7 +260,7 @@ func getPodsLogs(client KubernetesClient, selector labels.Selector) (map[string]
 	}
 
 	for _, pod := range pods.Items {
-		byteBody, err := client.Pods(api.NamespaceDefault).GetLogs(pod.Name, &api.PodLogOptions{}).Do().Raw()
+		byteBody, err := client.CoreV1().Pods(apiv1.NamespaceDefault).GetLogs(pod.Name, &apiv1.PodLogOptions{}).Do().Raw()
 		if err != nil {
 			return nil, err
 		}
@@ -267,9 +269,9 @@ func getPodsLogs(client KubernetesClient, selector labels.Selector) (map[string]
 	return result, nil
 }
 
-func getConfigMapFromLogs(job batch.Job, logs map[string]string) *api.ConfigMap {
-	return &api.ConfigMap{
-		ObjectMeta: api.ObjectMeta{Name: job.Name, Labels: job.Labels},
+func getConfigMapFromLogs(job batchv1.Job, logs map[string]string) *apiv1.ConfigMap {
+	return &apiv1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{Name: job.Name, Labels: job.Labels},
 		Data:       logs,
 	}
 }
@@ -278,12 +280,12 @@ func (k *K8Fabricator) CheckKubernetesServiceHealthByServiceInstanceId(creds K8s
 	logger.Info("[CheckKubernetesServiceHealthByServiceInstanceId] serviceId:", instance_id)
 	// http://kubernetes.io/v1.1/docs/user-guide/liveness/README.html
 
-	c, selector, err := k.getKubernetesClientWithServiceIdSelector(creds, instance_id)
+	client, selector, err := k.getKubernetesClientWithServiceIdSelector(creds, instance_id)
 	if err != nil {
 		return false, err
 	}
 
-	pods, err := c.Pods(api.NamespaceDefault).List(api.ListOptions{
+	pods, err := client.CoreV1().Pods(apiv1.NamespaceDefault).List(metav1.ListOptions{
 		LabelSelector: selector,
 	})
 	if err != nil {
@@ -312,7 +314,7 @@ func (k *K8Fabricator) CheckKubernetesServiceHealthByServiceInstanceId(creds K8s
 
 func (k *K8Fabricator) DeleteAllByServiceId(creds K8sClusterCredentials, service_id string) error {
 	logger.Info("[DeleteAllByServiceId] serviceId:", service_id)
-	c, extensionClient, err := k.getKubernetesClientAndExtensionClient(creds)
+	client, err := k.KubernetesClient.GetNewClient(creds)
 	if err != nil {
 		return err
 	}
@@ -321,7 +323,7 @@ func (k *K8Fabricator) DeleteAllByServiceId(creds K8sClusterCredentials, service
 		return err
 	}
 
-	accs, err := c.ServiceAccounts(api.NamespaceDefault).List(api.ListOptions{
+	accs, err := client.CoreV1().ServiceAccounts(apiv1.NamespaceDefault).List(metav1.ListOptions{
 		LabelSelector: selector,
 	})
 	if err != nil {
@@ -332,14 +334,14 @@ func (k *K8Fabricator) DeleteAllByServiceId(creds K8sClusterCredentials, service
 	for _, i := range accs.Items {
 		name = i.ObjectMeta.Name
 		logger.Debug("[DeleteAllByServiceId] Delete service account:", name)
-		err = c.ServiceAccounts(api.NamespaceDefault).Delete(name)
+		err = client.CoreV1().ServiceAccounts(apiv1.NamespaceDefault).Delete(name, &metav1.DeleteOptions{})
 		if err != nil {
 			logger.Error("[DeleteAllByServiceId] Delete service account failed:", err)
 			return err
 		}
 	}
 
-	svcs, err := c.Services(api.NamespaceDefault).List(api.ListOptions{
+	svcs, err := client.CoreV1().Services(apiv1.NamespaceDefault).List(metav1.ListOptions{
 		LabelSelector: selector,
 	})
 	if err != nil {
@@ -350,53 +352,35 @@ func (k *K8Fabricator) DeleteAllByServiceId(creds K8sClusterCredentials, service
 	for _, i := range svcs.Items {
 		name = i.ObjectMeta.Name
 		logger.Debug("[DeleteAllByServiceId] Delete service:", name)
-		err = c.Services(api.NamespaceDefault).Delete(name)
+		err = client.CoreV1().Services(apiv1.NamespaceDefault).Delete(name, &metav1.DeleteOptions{})
 		if err != nil {
 			logger.Error("[DeleteAllByServiceId] Delete service failed:", err)
 			return err
 		}
 	}
 
-	if err = NewDeploymentControllerManager(extensionClient).DeleteAll(selector); err != nil {
-		logger.Error("[DeleteAllByServiceId] Delete deployment failed:", err)
-		return err
-	}
-
-	// TODO: Restore after k8s garbage collection is released
-	// for _, i := range dpls.Items {
-	// 	name = i.ObjectMeta.Name
-	// 	logger.Debug("[DeleteAllByServiceId] Delete deployment:", name)
-
-	// 	orphan := false
-	// 	opts := api.DeleteOptions{OrphanDependents: &orphan}
-	// 	err = c.Deployments(api.NamespaceDefault).Delete(name, &opts)
-	// 	if err != nil {
-	// 		logger.Error("[DeleteAllByServiceId] Delete deployment failed:", err)
-	// 		return err
-	// 	}
-	// }
-
-	// TODO: Delete after k8s garbage collection is released
-	rss, err := extensionClient.ReplicaSets(api.NamespaceDefault).List(api.ListOptions{
+	dpls, err := client.AppsV1beta1().Deployments(apiv1.NamespaceDefault).List(metav1.ListOptions{
 		LabelSelector: selector,
 	})
 	if err != nil {
-		logger.Error("[DeleteAllByServiceId] List replica sets failed:", err)
+		logger.Error("[DeleteAllByServiceId] List deployments failed:", err)
 		return err
 	}
-
-	for _, i := range rss.Items {
+	for _, i := range dpls.Items {
 		name = i.ObjectMeta.Name
-		logger.Debug("[DeleteAllByServiceId] Delete replica set:", name)
+		logger.Debug("[DeleteAllByServiceId] Delete deployment:", name)
 
-		err = extensionClient.ReplicaSets(api.NamespaceDefault).Delete(name, &api.DeleteOptions{})
+		foreground := metav1.DeletePropagationForeground
+		err = client.AppsV1beta1().Deployments(apiv1.NamespaceDefault).Delete(name, &metav1.DeleteOptions{
+			PropagationPolicy: &foreground,
+		})
 		if err != nil {
-			logger.Error("[DeleteAllByServiceId] Delete replica set failed:", err)
+			logger.Error("[DeleteAllByServiceId] Delete deployment failed:", err)
 			return err
 		}
 	}
 
-	secrets, err := c.Secrets(api.NamespaceDefault).List(api.ListOptions{
+	secrets, err := client.CoreV1().Secrets(apiv1.NamespaceDefault).List(metav1.ListOptions{
 		LabelSelector: selector,
 	})
 	if err != nil {
@@ -407,14 +391,14 @@ func (k *K8Fabricator) DeleteAllByServiceId(creds K8sClusterCredentials, service
 	for _, i := range secrets.Items {
 		name = i.ObjectMeta.Name
 		logger.Debug("[DeleteAllByServiceId] Delete secret:", name)
-		err = c.Secrets(api.NamespaceDefault).Delete(name)
+		err = client.CoreV1().Secrets(apiv1.NamespaceDefault).Delete(name, &metav1.DeleteOptions{})
 		if err != nil {
 			logger.Error("[DeleteAllByServiceId] Delete secret failed:", err)
 			return err
 		}
 	}
 
-	pvcs, err := c.PersistentVolumeClaims(api.NamespaceDefault).List(api.ListOptions{
+	pvcs, err := client.CoreV1().PersistentVolumeClaims(apiv1.NamespaceDefault).List(metav1.ListOptions{
 		LabelSelector: selector,
 	})
 	if err != nil {
@@ -425,7 +409,7 @@ func (k *K8Fabricator) DeleteAllByServiceId(creds K8sClusterCredentials, service
 	for _, i := range pvcs.Items {
 		name = i.ObjectMeta.Name
 		logger.Debug("[DeleteAllByServiceId] Delete PersistentVolumeClaims:", name)
-		err = c.PersistentVolumeClaims(api.NamespaceDefault).Delete(name)
+		err = client.CoreV1().PersistentVolumeClaims(apiv1.NamespaceDefault).Delete(name, &metav1.DeleteOptions{})
 		if err != nil {
 			logger.Error("[DeleteAllByServiceId] Delete PersistentVolumeClaims failed:", err)
 			return err
@@ -436,14 +420,13 @@ func (k *K8Fabricator) DeleteAllByServiceId(creds K8sClusterCredentials, service
 }
 
 func (k *K8Fabricator) DeleteAllPersistentVolumeClaims(creds K8sClusterCredentials) error {
-
-	c, err := k.KubernetesClient.GetNewClient(creds)
+	client, err := k.KubernetesClient.GetNewClient(creds)
 	if err != nil {
 		return err
 	}
 
-	pvList, err := c.PersistentVolumeClaims(api.NamespaceDefault).List(api.ListOptions{
-		LabelSelector: labels.NewSelector(),
+	pvList, err := client.CoreV1().PersistentVolumeClaims(apiv1.NamespaceDefault).List(metav1.ListOptions{
+		LabelSelector: labels.NewSelector().String(),
 	})
 	if err != nil {
 		logger.Error("[DeleteAllPersistentVolumeClaims] List PersistentVolumeClaims failed:", err)
@@ -454,7 +437,7 @@ func (k *K8Fabricator) DeleteAllPersistentVolumeClaims(creds K8sClusterCredentia
 	for _, i := range pvList.Items {
 		name := i.ObjectMeta.Name
 		logger.Debug("[DeleteAllPersistentVolumeClaims] Delete PersistentVolumeClaims:", name)
-		err = c.PersistentVolumeClaims(api.NamespaceDefault).Delete(name)
+		err = client.CoreV1().PersistentVolumeClaims(apiv1.NamespaceDefault).Delete(name, &metav1.DeleteOptions{})
 		if err != nil {
 			logger.Error("[DeleteAllPersistentVolumeClaims] Delete PersistentVolumeClaims: "+name+" failed!", err)
 			errorFound = true
@@ -468,15 +451,14 @@ func (k *K8Fabricator) DeleteAllPersistentVolumeClaims(creds K8sClusterCredentia
 	}
 }
 
-func (k *K8Fabricator) GetAllPersistentVolumes(creds K8sClusterCredentials) ([]api.PersistentVolume, error) {
-
-	c, err := k.KubernetesClient.GetNewClient(creds)
+func (k *K8Fabricator) GetAllPersistentVolumes(creds K8sClusterCredentials) ([]apiv1.PersistentVolume, error) {
+	client, err := k.KubernetesClient.GetNewClient(creds)
 	if err != nil {
 		return nil, err
 	}
 
-	pvList, err := c.PersistentVolumes().List(api.ListOptions{
-		LabelSelector: labels.NewSelector(),
+	pvList, err := client.CoreV1().PersistentVolumes().List(metav1.ListOptions{
+		LabelSelector: labels.NewSelector().String(),
 	})
 	if err != nil {
 		logger.Error("[GetAllPersistentVolumes] List PersistentVolume failed:", err)
@@ -485,16 +467,16 @@ func (k *K8Fabricator) GetAllPersistentVolumes(creds K8sClusterCredentials) ([]a
 	return pvList.Items, nil
 }
 
-func (k *K8Fabricator) GetService(creds K8sClusterCredentials, org, serviceId string) ([]api.Service, error) {
+func (k *K8Fabricator) GetService(creds K8sClusterCredentials, org, serviceId string) ([]apiv1.Service, error) {
 	logger.Info("[GetService] orgId:", org)
-	response := []api.Service{}
+	response := []apiv1.Service{}
 
-	c, selector, err := k.getKubernetesClientWithServiceIdSelector(creds, serviceId)
+	client, selector, err := k.getKubernetesClientWithServiceIdSelector(creds, serviceId)
 	if err != nil {
 		return response, err
 	}
 
-	serviceList, err := c.Services(api.NamespaceDefault).List(api.ListOptions{
+	serviceList, err := client.CoreV1().Services(apiv1.NamespaceDefault).List(metav1.ListOptions{
 		LabelSelector: selector,
 	})
 	if err != nil {
@@ -505,11 +487,11 @@ func (k *K8Fabricator) GetService(creds K8sClusterCredentials, org, serviceId st
 	return serviceList.Items, nil
 }
 
-func (k *K8Fabricator) GetServices(creds K8sClusterCredentials, org string) ([]api.Service, error) {
+func (k *K8Fabricator) GetServices(creds K8sClusterCredentials, org string) ([]apiv1.Service, error) {
 	logger.Info("[GetServices] orgId:", org)
-	response := []api.Service{}
+	response := []apiv1.Service{}
 
-	c, err := k.KubernetesClient.GetNewClient(creds)
+	client, err := k.KubernetesClient.GetNewClient(creds)
 	if err != nil {
 		logger.Error("[GetServices] GetNewClient error", err)
 		return response, err
@@ -520,7 +502,7 @@ func (k *K8Fabricator) GetServices(creds K8sClusterCredentials, org string) ([]a
 		return response, err
 	}
 
-	serviceList, err := c.Services(api.NamespaceDefault).List(api.ListOptions{
+	serviceList, err := client.CoreV1().Services(apiv1.NamespaceDefault).List(metav1.ListOptions{
 		LabelSelector: selector,
 	})
 	if err != nil {
@@ -530,22 +512,22 @@ func (k *K8Fabricator) GetServices(creds K8sClusterCredentials, org string) ([]a
 	return serviceList.Items, nil
 }
 
-func (k *K8Fabricator) GetQuota(creds K8sClusterCredentials, space string) (*api.ResourceQuotaList, error) {
-	c, err := k.KubernetesClient.GetNewClient(creds)
+func (k *K8Fabricator) GetQuota(creds K8sClusterCredentials, space string) (*apiv1.ResourceQuotaList, error) {
+	client, err := k.KubernetesClient.GetNewClient(creds)
 	if err != nil {
 		return nil, err
 	}
 
-	return c.ResourceQuotas(api.NamespaceDefault).List(api.ListOptions{})
+	return client.CoreV1().ResourceQuotas(apiv1.NamespaceDefault).List(metav1.ListOptions{})
 }
 
 func (k *K8Fabricator) GetClusterWorkers(creds K8sClusterCredentials) ([]string, error) {
-	c, err := k.KubernetesClient.GetNewClient(creds)
+	client, err := k.KubernetesClient.GetNewClient(creds)
 	if err != nil {
 		return []string{}, err
 	}
 
-	nodes, err := c.Nodes().List(api.ListOptions{})
+	nodes, err := client.CoreV1().Nodes().List(metav1.ListOptions{})
 	if err != nil {
 		logger.Error("[GetClusterWorkers] GetNodes error:", err)
 		return []string{}, err
@@ -558,8 +540,8 @@ func (k *K8Fabricator) GetClusterWorkers(creds K8sClusterCredentials) ([]string,
 	return workers, nil
 }
 
-func (k *K8Fabricator) ListDeployments(creds K8sClusterCredentials) (*extensions.DeploymentList, error) {
-	c, err := k.KubernetesClient.GetNewExtensionsClient(creds)
+func (k *K8Fabricator) ListDeployments(creds K8sClusterCredentials) (*appsv1beta1.DeploymentList, error) {
+	client, err := k.KubernetesClient.GetNewClient(creds)
 	if err != nil {
 		return nil, err
 	}
@@ -568,7 +550,7 @@ func (k *K8Fabricator) ListDeployments(creds K8sClusterCredentials) (*extensions
 		return nil, err
 	}
 
-	return c.Deployments(api.NamespaceDefault).List(api.ListOptions{
+	return client.AppsV1beta1().Deployments(apiv1.NamespaceDefault).List(metav1.ListOptions{
 		LabelSelector: selector,
 	})
 }
@@ -576,19 +558,19 @@ func (k *K8Fabricator) ListDeployments(creds K8sClusterCredentials) (*extensions
 type PodStatus struct {
 	PodName       string
 	ServiceId     string
-	Status        api.PodPhase
+	Status        apiv1.PodPhase
 	StatusMessage string
 }
 
 func (k *K8Fabricator) GetPodsStateByServiceId(creds K8sClusterCredentials, service_id string) ([]PodStatus, error) {
 	result := []PodStatus{}
 
-	c, selector, err := k.getKubernetesClientWithServiceIdSelector(creds, service_id)
+	client, selector, err := k.getKubernetesClientWithServiceIdSelector(creds, service_id)
 	if err != nil {
 		return result, err
 	}
 
-	pods, err := c.Pods(api.NamespaceDefault).List(api.ListOptions{
+	pods, err := client.CoreV1().Pods(apiv1.NamespaceDefault).List(metav1.ListOptions{
 		LabelSelector: selector,
 	})
 	if err != nil {
@@ -607,7 +589,7 @@ func (k *K8Fabricator) GetPodsStateByServiceId(creds K8sClusterCredentials, serv
 func (k *K8Fabricator) GetPodsStateForAllServices(creds K8sClusterCredentials) (map[string][]PodStatus, error) {
 	result := map[string][]PodStatus{}
 
-	c, err := k.KubernetesClient.GetNewClient(creds)
+	client, err := k.KubernetesClient.GetNewClient(creds)
 	if err != nil {
 		return result, err
 	}
@@ -616,7 +598,7 @@ func (k *K8Fabricator) GetPodsStateForAllServices(creds K8sClusterCredentials) (
 		return result, err
 	}
 
-	pods, err := c.Pods(api.NamespaceDefault).List(api.ListOptions{
+	pods, err := client.CoreV1().Pods(apiv1.NamespaceDefault).List(metav1.ListOptions{
 		LabelSelector: selector,
 	})
 	if err != nil {
@@ -638,28 +620,28 @@ func (k *K8Fabricator) GetPodsStateForAllServices(creds K8sClusterCredentials) (
 type ServiceCredential struct {
 	Name  string
 	Host  string
-	Ports []api.ServicePort
+	Ports []apiv1.ServicePort
 }
 
-func (k *K8Fabricator) GetSecret(creds K8sClusterCredentials, key string) (*api.Secret, error) {
-	secret := &api.Secret{}
-	c, err := k.KubernetesClient.GetNewClient(creds)
+func (k *K8Fabricator) GetSecret(creds K8sClusterCredentials, key string) (*apiv1.Secret, error) {
+	secret := &apiv1.Secret{}
+	client, err := k.KubernetesClient.GetNewClient(creds)
 	if err != nil {
 		return secret, err
 	}
-	result, err := c.Secrets(api.NamespaceDefault).Get(key)
+	result, err := client.CoreV1().Secrets(apiv1.NamespaceDefault).Get(key, metav1.GetOptions{})
 	if err != nil {
 		return secret, err
 	}
 	return result, nil
 }
 
-func (k *K8Fabricator) CreateSecret(creds K8sClusterCredentials, secret api.Secret) error {
-	c, err := k.KubernetesClient.GetNewClient(creds)
+func (k *K8Fabricator) CreateSecret(creds K8sClusterCredentials, secret apiv1.Secret) error {
+	client, err := k.KubernetesClient.GetNewClient(creds)
 	if err != nil {
 		return err
 	}
-	_, err = c.Secrets(api.NamespaceDefault).Create(&secret)
+	_, err = client.CoreV1().Secrets(apiv1.NamespaceDefault).Create(&secret)
 	if err != nil {
 		return err
 	}
@@ -667,23 +649,23 @@ func (k *K8Fabricator) CreateSecret(creds K8sClusterCredentials, secret api.Secr
 }
 
 func (k *K8Fabricator) DeleteSecret(creds K8sClusterCredentials, key string) error {
-	c, err := k.KubernetesClient.GetNewClient(creds)
+	client, err := k.KubernetesClient.GetNewClient(creds)
 	if err != nil {
 		return err
 	}
-	err = c.Secrets(api.NamespaceDefault).Delete(key)
+	err = client.CoreV1().Secrets(apiv1.NamespaceDefault).Delete(key, &metav1.DeleteOptions{})
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (k *K8Fabricator) UpdateSecret(creds K8sClusterCredentials, secret api.Secret) error {
-	c, err := k.KubernetesClient.GetNewClient(creds)
+func (k *K8Fabricator) UpdateSecret(creds K8sClusterCredentials, secret apiv1.Secret) error {
+	client, err := k.KubernetesClient.GetNewClient(creds)
 	if err != nil {
 		return err
 	}
-	_, err = c.Secrets(api.NamespaceDefault).Update(&secret)
+	_, err = client.CoreV1().Secrets(apiv1.NamespaceDefault).Update(&secret)
 	if err != nil {
 		return err
 	}
@@ -704,7 +686,7 @@ func (k *K8Fabricator) GetAllPodsEnvsByServiceId(creds K8sClusterCredentials, sp
 	logger.Info("[GetAllPodsEnvsByServiceId] serviceId:", service_id)
 	result := []PodEnvs{}
 
-	c, extensionClient, err := k.getKubernetesClientAndExtensionClient(creds)
+	client, err := k.KubernetesClient.GetNewClient(creds)
 	if err != nil {
 		return result, err
 	}
@@ -713,7 +695,7 @@ func (k *K8Fabricator) GetAllPodsEnvsByServiceId(creds K8sClusterCredentials, sp
 		return result, err
 	}
 
-	deployments, err := extensionClient.Deployments(api.NamespaceDefault).List(api.ListOptions{
+	deployments, err := client.AppsV1beta1().Deployments(apiv1.NamespaceDefault).List(metav1.ListOptions{
 		LabelSelector: selector,
 	})
 	if err != nil {
@@ -723,7 +705,7 @@ func (k *K8Fabricator) GetAllPodsEnvsByServiceId(creds K8sClusterCredentials, sp
 		return result, fmt.Errorf("No deployments associated with the service: %s", service_id)
 	}
 
-	secrets, err := c.Secrets(api.NamespaceDefault).List(api.ListOptions{
+	secrets, err := client.CoreV1().Secrets(apiv1.NamespaceDefault).List(metav1.ListOptions{
 		LabelSelector: selector,
 	})
 	if err != nil {
@@ -757,7 +739,7 @@ func (k *K8Fabricator) GetAllPodsEnvsByServiceId(creds K8sClusterCredentials, sp
 	return result, nil
 }
 
-func findSecretValue(secrets *api.SecretList, selector *api.SecretKeySelector) string {
+func findSecretValue(secrets *apiv1.SecretList, selector *apiv1.SecretKeySelector) string {
 	for _, secret := range secrets.Items {
 		if secret.Name != selector.Name {
 			continue
@@ -772,44 +754,34 @@ func findSecretValue(secrets *api.SecretList, selector *api.SecretKeySelector) s
 	return ""
 }
 
-func (k *K8Fabricator) getKubernetesClientWithServiceIdSelector(creds K8sClusterCredentials, serviceId string) (KubernetesClient, labels.Selector, error) {
+func (k *K8Fabricator) getKubernetesClientWithServiceIdSelector(creds K8sClusterCredentials, serviceId string) (kubernetes.Interface, string, error) {
 	selector, err := getSelectorForServiceIdLabel(serviceId)
 	if err != nil {
-		return nil, selector, err
+		return nil, "", err
 	}
 
-	c, err := k.KubernetesClient.GetNewClient(creds)
-	return c, selector, err
-}
-
-func (k *K8Fabricator) getKubernetesClientAndExtensionClient(creds K8sClusterCredentials) (KubernetesClient, ExtensionsInterface, error) {
 	client, err := k.KubernetesClient.GetNewClient(creds)
-	if err != nil {
-		return client, nil, err
-	}
-
-	extensionsClient, err := k.KubernetesClient.GetNewExtensionsClient(creds)
-	return client, extensionsClient, err
+	return client, selector, err
 }
 
-func getSelectorForServiceIdLabel(serviceId string) (labels.Selector, error) {
+func getSelectorForServiceIdLabel(serviceId string) (string, error) {
 	selector := labels.NewSelector()
-	managedByReq, err := labels.NewRequirement(managedByLabel, labels.EqualsOperator, sets.NewString("TAP"))
+	managedByReq, err := labels.NewRequirement(managedByLabel, selection.Equals, []string{"TAP"})
 	if err != nil {
-		return selector, err
+		return "", err
 	}
-	serviceIdReq, err := labels.NewRequirement(serviceIdLabel, labels.EqualsOperator, sets.NewString(serviceId))
+	serviceIdReq, err := labels.NewRequirement(serviceIdLabel, selection.Equals, []string{serviceId})
 	if err != nil {
-		return selector, err
+		return "", err
 	}
-	return selector.Add(*managedByReq, *serviceIdReq), nil
+	return selector.Add(*managedByReq, *serviceIdReq).String(), nil
 }
 
-func getSelectorForManagedByLabel() (labels.Selector, error) {
+func getSelectorForManagedByLabel() (string, error) {
 	selector := labels.NewSelector()
-	managedByReq, err := labels.NewRequirement(managedByLabel, labels.EqualsOperator, sets.NewString("TAP"))
+	managedByReq, err := labels.NewRequirement(managedByLabel, selection.Equals, []string{"TAP"})
 	if err != nil {
-		return selector, err
+		return "", err
 	}
-	return selector.Add(*managedByReq), nil
+	return selector.Add(*managedByReq).String(), nil
 }

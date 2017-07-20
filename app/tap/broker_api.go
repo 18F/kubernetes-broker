@@ -27,7 +27,7 @@ import (
 
 	"github.com/cloudfoundry-community/go-cfenv"
 	"github.com/gocraft/web"
-	"k8s.io/kubernetes/pkg/api"
+	apiv1 "k8s.io/api/core/v1"
 
 	"github.com/trustedanalytics/kubernetes-broker/catalog"
 	"github.com/trustedanalytics/kubernetes-broker/consul"
@@ -127,7 +127,7 @@ func (c *Context) ServiceInstancesPut(rw web.ResponseWriter, req *web.Request) {
 		if err != nil {
 			brokerConfig.StateService.ReportProgress(instance_id, "FAILED", err)
 			if !async {
-				logger.Error(err)
+				logger.Error(err.Error())
 			}
 			util.Respond500(rw, err)
 			return
@@ -145,7 +145,7 @@ func (c *Context) ServiceInstancesPut(rw web.ResponseWriter, req *web.Request) {
 		if err != nil {
 			brokerConfig.StateService.ReportProgress(instance_id, "FAILED", err)
 			if !async {
-				logger.Error(err)
+				logger.Error(err.Error())
 			}
 			util.Respond500(rw, err)
 			return
@@ -266,7 +266,7 @@ func (c *Context) SetServiceVisibility(rw web.ResponseWriter, req *web.Request) 
 		}
 
 		for _, port := range service.Spec.Ports {
-			if port.Protocol != api.ProtocolUDP {
+			if port.Protocol != apiv1.ProtocolUDP {
 				param := consul.ConsulServiceParams{
 					Name:     getConsulServiceName(port, service),
 					IsPublic: req_json.Visibility,
@@ -287,7 +287,7 @@ func (c *Context) SetServiceVisibility(rw web.ResponseWriter, req *web.Request) 
 	util.WriteJson(rw, response, http.StatusAccepted)
 }
 
-func createServiceInfoList(org, space string, services []api.Service, servicesPublicTags map[string]bool) []ServiceInfoResponse {
+func createServiceInfoList(org, space string, services []apiv1.Service, servicesPublicTags map[string]bool) []ServiceInfoResponse {
 	result := []ServiceInfoResponse{}
 	for _, service := range services {
 		svc := ServiceInfoResponse{
@@ -316,15 +316,15 @@ func readTapPublic(serviceName string, servicesPublicTags map[string]bool) bool 
 	return false
 }
 
-func getServiceExternalAddress(port api.ServicePort) string {
+func getServiceExternalAddress(port apiv1.ServicePort) string {
 	return strings.ToLower(string(port.Protocol)) + "." + brokerConfig.Domain + ":" + strconv.Itoa(int(port.NodePort))
 }
 
-func getServiceInternalHost(port api.ServicePort, service api.Service, domain string) string {
+func getServiceInternalHost(port apiv1.ServicePort, service apiv1.Service, domain string) string {
 	return fmt.Sprintf("%s.service.%s", getConsulServiceName(port, service), domain)
 }
 
-func getConsulServiceName(port api.ServicePort, service api.Service) string {
+func getConsulServiceName(port apiv1.ServicePort, service apiv1.Service) string {
 	portName := ""
 	if len(service.Spec.Ports) > 1 {
 		if port.Name != "" {
@@ -464,7 +464,7 @@ func removeCluster(creds k8s.K8sClusterCredentials, org string) {
 				logger.Info(fmt.Sprintf("[removeCluster] There is no more Services and PersistentVolumes for the org: %s. Cluster will be removed now...", org))
 				err = brokerConfig.CreatorConnector.DeleteCluster(org)
 				if err != nil {
-					logger.Error(err)
+					logger.Error(err.Error())
 					return
 				}
 				logger.Info("[removeCluster] Cluster removed successfully! Org:", org)
@@ -499,7 +499,7 @@ func (c *Context) ServiceBindingsPut(rw web.ResponseWriter, req *web.Request) {
 		util.Respond500(rw, errors.New("service id or plan id is nil - at this stage, we won't continue. TODO: ask CF to retrieve those from API, by instance_id"))
 		return
 	} else {
-		logger.Debug(req_json, instance_id, binding_id, "ServiceID=", *req_json.ServiceId, "PlanID=", *req_json.PlanId)
+		logger.Debug(instance_id, binding_id, "ServiceID=", *req_json.ServiceId, "PlanID=", *req_json.PlanId)
 	}
 
 	svc_meta, plan_meta, err := catalog.WhatToCreateByServiceAndPlanId(*req_json.ServiceId, *req_json.PlanId)
@@ -557,7 +557,7 @@ func (c *Context) ServiceBindingsPut(rw web.ResponseWriter, req *web.Request) {
 type ServiceCredential struct {
 	Name  string
 	Host  string
-	Ports []api.ServicePort
+	Ports []apiv1.ServicePort
 }
 
 func getServiceCredentials(creds k8s.K8sClusterCredentials, org, serviceId string) ([]ServiceCredential, error) {
@@ -583,9 +583,9 @@ func getServiceCredentials(creds k8s.K8sClusterCredentials, org, serviceId strin
 	return result, nil
 }
 
-func getServiceInternalHostByFirstTCPPort(service api.Service, domain string) string {
+func getServiceInternalHostByFirstTCPPort(service apiv1.Service, domain string) string {
 	for _, port := range service.Spec.Ports {
-		if port.Protocol == api.ProtocolTCP {
+		if port.Protocol == apiv1.ProtocolTCP {
 			return getServiceInternalHost(port, service, domain)
 		}
 	}
@@ -740,7 +740,7 @@ func (c *Context) CreateSecret(rw web.ResponseWriter, req *web.Request) {
 		util.Respond500(rw, err)
 		return
 	}
-	req_json := api.Secret{}
+	req_json := apiv1.Secret{}
 	err = util.ReadJson(req, &req_json)
 	if err != nil {
 		util.Respond500(rw, err)
@@ -777,7 +777,7 @@ func (c *Context) UpdateSecret(rw web.ResponseWriter, req *web.Request) {
 		util.Respond500(rw, err)
 		return
 	}
-	req_json := api.Secret{}
+	req_json := apiv1.Secret{}
 	err = util.ReadJson(req, &req_json)
 	if err != nil {
 		util.Respond500(rw, err)

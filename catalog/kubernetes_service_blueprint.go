@@ -25,8 +25,8 @@ import (
 	"strconv"
 	"strings"
 
-	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/apis/extensions"
+	appsv1beta1 "k8s.io/api/apps/v1beta1"
+	apiv1 "k8s.io/api/core/v1"
 )
 
 type KubernetesBlueprint struct {
@@ -42,11 +42,11 @@ type KubernetesBlueprint struct {
 }
 
 type KubernetesComponent struct {
-	PersistentVolumeClaims []*api.PersistentVolumeClaim `json:"persistentVolumeClaims"`
-	Deployments            []*extensions.Deployment     `json:"deployments"`
-	Services               []*api.Service               `json:"services"`
-	ServiceAccounts        []*api.ServiceAccount        `json:"serviceAccounts"`
-	Secrets                []*api.Secret                `json:"secrets"`
+	PersistentVolumeClaims []*apiv1.PersistentVolumeClaim `json:"persistentVolumeClaims"`
+	Deployments            []*appsv1beta1.Deployment      `json:"deployments"`
+	Services               []*apiv1.Service               `json:"services"`
+	ServiceAccounts        []*apiv1.ServiceAccount        `json:"serviceAccounts"`
+	Secrets                []*apiv1.Secret                `json:"secrets"`
 }
 
 var TEMP_DYNAMIC_BLUEPRINTS = map[string]KubernetesBlueprint{}
@@ -108,7 +108,7 @@ func CreateKubernetesComponentFromBlueprint(blueprint KubernetesBlueprint, encod
 	result := &KubernetesComponent{}
 
 	for _, pvc := range blueprint.PersistentVolumeClaim {
-		parsedPVC := &api.PersistentVolumeClaim{}
+		parsedPVC := &apiv1.PersistentVolumeClaim{}
 		err := json.Unmarshal([]byte(pvc), parsedPVC)
 		if err != nil {
 			logger.Error("Unmarshalling PersistentVolumeClaim error:", err)
@@ -118,7 +118,7 @@ func CreateKubernetesComponentFromBlueprint(blueprint KubernetesBlueprint, encod
 	}
 
 	for _, secret := range blueprint.SecretsJson {
-		parsedSecret := &api.Secret{}
+		parsedSecret := &apiv1.Secret{}
 		if encodeSecrets {
 			secret = encodeByte64ToString(secret)
 		}
@@ -131,7 +131,7 @@ func CreateKubernetesComponentFromBlueprint(blueprint KubernetesBlueprint, encod
 	}
 
 	for _, deployment := range blueprint.DeploymentJson {
-		parsedDeployment := &extensions.Deployment{}
+		parsedDeployment := &appsv1beta1.Deployment{}
 		err := json.Unmarshal([]byte(deployment), parsedDeployment)
 		if err != nil {
 			logger.Error("Unmarshalling deployment error:", err)
@@ -141,7 +141,7 @@ func CreateKubernetesComponentFromBlueprint(blueprint KubernetesBlueprint, encod
 	}
 
 	for _, svc := range blueprint.ServiceJson {
-		parsedSvc := &api.Service{}
+		parsedSvc := &apiv1.Service{}
 		err := json.Unmarshal([]byte(svc), parsedSvc)
 		if err != nil {
 			logger.Error("Unmarshalling service error:", err)
@@ -151,7 +151,7 @@ func CreateKubernetesComponentFromBlueprint(blueprint KubernetesBlueprint, encod
 	}
 
 	for _, Accsvc := range blueprint.ServiceAcccountJson {
-		parsedAccSvc := &api.ServiceAccount{}
+		parsedAccSvc := &apiv1.ServiceAccount{}
 		err := json.Unmarshal([]byte(Accsvc), parsedAccSvc)
 		if err != nil {
 			logger.Error("Unmarshalling service account error:", err)
