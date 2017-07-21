@@ -1,0 +1,32 @@
+node.data: ${NODE_DATA}
+node.master: ${NODE_MASTER:true}
+node.name: ${HOSTNAME}
+
+# see https://github.com/kubernetes/kubernetes/issues/3595
+bootstrap.mlockall: ${BOOTSTRAP_MLOCKALL:false}
+
+network.host: 0.0.0.0
+
+cloud:
+  kubernetes:
+    service: ${SERVICE}
+    namespace: ${KUBERNETES_NAMESPACE}
+
+discovery:
+  type: kubernetes
+  zen:
+    minimum_master_nodes: 2
+
+# see https://github.com/elastic/elasticsearch-definitive-guide/pull/679
+processors: ${PROCESSORS:}
+
+# avoid split-brain w/ a minimum consensus of two masters plus a data node
+gateway.expected_master_nodes: ${EXPECTED_MASTER_NODES:2}
+gateway.expected_data_nodes: ${EXPECTED_DATA_NODES:1}
+gateway.recover_after_time: ${RECOVER_AFTER_TIME:5m}
+gateway.recover_after_master_nodes: ${RECOVER_AFTER_MASTER_NODES:2}
+gateway.recover_after_data_nodes: ${RECOVER_AFTER_DATA_NODES:1}
+
+# configure elasticfence
+elasticfence.disabled: false
+elasticfence.root.password: ${AUTH_PASSWORD}
