@@ -1,0 +1,6 @@
+{
+  "id": "60defe53-526c-4dd8-aeb1-226d94a7cb48",
+  "name": "3x-ha",
+  "description": "Elasticsearch instance with 3GB of RAM and 1 AWS vCPU",
+  "free": true
+}
