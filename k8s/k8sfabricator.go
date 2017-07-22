@@ -299,6 +299,22 @@ func (k *K8Fabricator) CheckKubernetesServiceHealthByServiceInstanceId(creds K8s
 		return false, err
 	}
 
+	sets, err := client.AppsV1beta1().StatefulSets(apiv1.NamespaceDefault).List(metav1.ListOptions{
+		LabelSelector: selector,
+	})
+	if err != nil {
+		return false, err
+	}
+
+	// if we have statefulsets as part of this deployment then we check their readiness first and bail if not
+	if len(sets.Items) > 0 {
+		for _, set := range sets.Items {
+			if set.Spec.Replicas != &set.Status.CurrentReplicas {
+				return false, fmt.Errorf("Not all replicas are up. Want %s, Have %s", set.Spec.Replicas, set.Status.CurrentReplicas)
+			}
+		}
+	}
+
 	pods, err := client.CoreV1().Pods(apiv1.NamespaceDefault).List(metav1.ListOptions{
 		LabelSelector: selector,
 	})
