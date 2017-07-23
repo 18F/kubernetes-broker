@@ -308,6 +308,8 @@ func (k *K8Fabricator) CheckKubernetesServiceHealthByServiceInstanceId(creds K8s
 
 	// if we have statefulsets as part of this deployment then we check their readiness first and bail if not
 	if len(sets.Items) > 0 {
+		logger.Debug("[CheckKubernetesServiceHealthByServiceInstanceId] Sets:", sets)
+
 		for _, set := range sets.Items {
 			if set.Spec.Replicas != &set.Status.CurrentReplicas {
 				return false, fmt.Errorf("Not all replicas are up. Want %s, Have %s", set.Spec.Replicas, set.Status.CurrentReplicas)
