@@ -311,8 +311,10 @@ func (k *K8Fabricator) CheckKubernetesServiceHealthByServiceInstanceId(creds K8s
 		logger.Debug("[CheckKubernetesServiceHealthByServiceInstanceId] Sets:", sets)
 
 		for _, set := range sets.Items {
-			if set.Spec.Replicas != &set.Status.CurrentReplicas {
-				return false, fmt.Errorf("Not all replicas are up. Want %s, Have %s", set.Spec.Replicas, set.Status.CurrentReplicas)
+			logger.Debug("[CheckKubernetesServiceHealthByServiceInstanceId] Set Replicas Want/Have:", set.Spec.ServiceName, *set.Spec.Replicas, set.Status.Replicas)
+			if *set.Spec.Replicas != set.Status.Replicas {
+				logger.Debug("[CheckKubernetesServiceHealthByServiceInstanceId] Not all replicas are up.")
+				return false, fmt.Errorf("Not all replicas are up. Want %s, Have %s", set.Spec.Replicas, set.Status.Replicas)
 			}
 		}
 	}
