@@ -30,3 +30,8 @@ gateway.recover_after_data_nodes: ${RECOVER_AFTER_DATA_NODES:1}
 # configure elasticfence
 elasticfence.disabled: false
 elasticfence.root.password: ${AUTH_PASSWORD}
+
+# assume 3 data node configuration which is what k8s is currently configured to deploy
+# note: this won't work in 5.x; you must use index templates
+index.number_of_shards: 3
+index.number_of_replicas: 2
