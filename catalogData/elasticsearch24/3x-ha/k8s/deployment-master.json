@@ -133,8 +133,8 @@
                 }
               },
               {
-                "name": "ES_JAVA_OPTS",
-                "value": "-Djava.net.preferIPv4Stack=true -Xms1792m -Xmx1792m"
+                "name": "ES_HEAP_SIZE",
+                "value": "1792m"
               },
               {
                 "name": "MANAGED_BY",
