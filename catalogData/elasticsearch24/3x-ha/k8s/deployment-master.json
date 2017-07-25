@@ -63,7 +63,7 @@
         "containers": [
           {
             "name": "elasticsearch-master",
-            "image": "jmcarp/elasticsearch-pet:2.4.4",
+            "image": "18fgsa/elasticsearch-ha:2.4.4",
             "resources": {
               "requests": {
                 "memory": "1792M",

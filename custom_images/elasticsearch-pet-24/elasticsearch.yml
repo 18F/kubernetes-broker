@@ -33,5 +33,5 @@ elasticfence.root.password: ${AUTH_PASSWORD}
 
 # assume 3 data node configuration which is what k8s is currently configured to deploy
 # note: this won't work in 5.x; you must use index templates
-index.number_of_shards: 3
-index.number_of_replicas: 2
+index.number_of_shards: ${NUMBER_OF_SHARDS:3}
+index.number_of_replicas: ${NUMBER_OF_REPLICAS:2}

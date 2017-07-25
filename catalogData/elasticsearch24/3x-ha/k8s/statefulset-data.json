@@ -64,7 +64,7 @@
         "containers": [
           {
             "name": "elasticsearch-data",
-            "image": "jmcarp/elasticsearch-pet:latest",
+            "image": "18fgsa/elasticsearch-ha:2.4.4",
             "resources": {
               "requests": {
                 "memory": "1792M",

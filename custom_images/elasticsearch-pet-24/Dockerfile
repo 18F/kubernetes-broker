@@ -1,4 +1,4 @@
-FROM elasticsearch:2.4.4
+FROM 18fgsa/elasticsearch:2.4.4
 
 RUN bin/plugin install io.fabric8/elasticsearch-cloud-kubernetes/2.4.4
 RUN bin/plugin install https://raw.githubusercontent.com/elasticfence/elasticsearch-http-user-auth/2.4.4/jar/elasticfence-2.4.4-SNAPSHOT.zip
