@@ -2,7 +2,7 @@
   "kind": "StatefulSet",
   "apiVersion": "apps/v1beta1",
   "metadata": {
-    "name": "$idx_and_short_serviceid",
+    "name": "$idx_and_short_serviceid-data",
     "labels": {
       "org": "$org",
       "space": "$space",
@@ -15,7 +15,7 @@
     }
   },
   "spec": {
-    "serviceName": "$idx_and_short_serviceid",
+    "serviceName": "$idx_and_short_serviceid-data",
     "replicas": 3,
     "selector": {
       "matchLabels" : {
@@ -151,7 +151,7 @@
                 }
               }
             },
-            "imagePullPolicy": "Always"
+            "imagePullPolicy": "IfNotPresent"
           }
         ],
         "restartPolicy": "Always",
