@@ -165,7 +165,7 @@
           "storageClassName": "$storage_class",
           "resources": {
             "requests": {
-              "storage": "10Gi"
+              "storage": "1Gi"
             }
           }
         }
