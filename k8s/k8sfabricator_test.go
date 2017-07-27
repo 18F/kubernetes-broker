@@ -303,7 +303,7 @@ func TestGetAllPodsEnvsByServiceId(t *testing.T) {
 
 			_, err := fabricator.GetAllPodsEnvsByServiceId(testCreds, space, serviceId)
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, "No deployments associated with the service: "+serviceId)
+			So(err.Error(), ShouldEqual, "No deployments or statefulsets associated with the service: "+serviceId)
 		})
 
 		Convey("Should return data from matching secret", func() {
