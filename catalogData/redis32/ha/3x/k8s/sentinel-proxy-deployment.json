@@ -29,7 +29,7 @@
                 "value": "mymaster"
               }
             ],
-            "image": "rogeruiz/redis-sentinel-proxy",
+            "image": "18fgsa/redis-sentinel-proxy",
             "imagePullPolicy": "Always",
             "name": "redis-sentinel-proxy",
             "ports": [
