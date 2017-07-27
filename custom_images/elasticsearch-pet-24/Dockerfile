@@ -12,6 +12,11 @@ RUN apt-get update && apt-get install -y \
     jq \
     curl \
   && rm -rf /var/lib/apt/lists/*
+
+COPY entrypoint.sh /entrypoint.sh
+
 COPY pre-stop-hook.sh /pre-stop-hook.sh
 
 COPY elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
+
+ENTRYPOINT ["/entrypoint.sh"]
