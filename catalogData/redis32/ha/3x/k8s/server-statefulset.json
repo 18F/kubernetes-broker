@@ -9,14 +9,23 @@
     "serviceName": "redis-server",
     "template": {
       "metadata": {
-        "annotations": {
-          "pod.beta.kubernetes.io/init-containers": "[{ \"name\": \"k8s-redis-ha-server\", \"image\": \"tarosky/k8s-redis-ha:server-3.0.1\", \"volumeMounts\": [{\"name\": \"opt\", \"mountPath\": \"/opt\"}] }]"
-        },
         "labels": {
           "app": "redis-server"
         }
       },
       "spec": {
+        "initContainers": [
+          {
+            "name": "k8s-redis-ha-sentinel",
+            "image": "18fgsa/k8s-redis-ha:latest",
+            "volumeMounts": [
+              {
+                "name": "opt",
+                "mountPath": "/opt"
+              }
+            ]
+          }
+        ],
         "containers": [
           {
             "args": [

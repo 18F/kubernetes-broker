@@ -9,14 +9,23 @@
     "serviceName": "redis-sentinel",
     "template": {
       "metadata": {
-        "annotations": {
-          "pod.beta.kubernetes.io/init-containers": "[{ \"name\": \"k8s-redis-ha-sentinel\", \"image\": \"tarosky/k8s-redis-ha:sentinel-3.0.1\", \"volumeMounts\": [{\"name\": \"opt\", \"mountPath\": \"/opt\"}] }]"
-        },
         "labels": {
           "app": "redis-sentinel"
         }
       },
       "spec": {
+        "initContainers": [
+          {
+            "name": "k8s-redis-ha-sentinel",
+            "image": "18fgsa/k8s-redis-ha:latest",
+            "volumeMounts": [
+              {
+                "name": "opt",
+                "mountPath": "/opt"
+              }
+            ]
+          }
+        ],
         "containers": [
           {
             "args": [
