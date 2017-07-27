@@ -1,0 +1,88 @@
+{
+  "apiVersion": "apps/v1beta1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "redis-server"
+  },
+  "spec": {
+    "replicas": 3,
+    "serviceName": "redis-server",
+    "template": {
+      "metadata": {
+        "annotations": {
+          "pod.beta.kubernetes.io/init-containers": "[{ \"name\": \"k8s-redis-ha-server\", \"image\": \"tarosky/k8s-redis-ha:server-3.0.1\", \"volumeMounts\": [{\"name\": \"opt\", \"mountPath\": \"/opt\"}] }]"
+        },
+        "labels": {
+          "app": "redis-server"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "args": [
+              "/opt/redis.conf"
+            ],
+            "command": [
+              "/opt/bin/k8s-redis-ha-server"
+            ],
+            "env": [
+              {
+                "name": "SERVICE",
+                "value": "redis-server"
+              },
+              {
+                "name": "SERVICE_PORT",
+                "value": "redis-server"
+              },
+              {
+                "name": "SENTINEL",
+                "value": "redis-sentinel"
+              },
+              {
+                "name": "SENTINEL_PORT",
+                "value": "redis-sentinel"
+              }
+            ],
+            "image": "redis:3.2",
+            "name": "redis-server",
+            "ports": [
+              {
+                "containerPort": 6379,
+                "name": "redis-server"
+              }
+            ],
+            "readinessProbe": {
+              "exec": {
+                "command": [
+                  "redis-cli",
+                  "info",
+                  "server"
+                ]
+              }
+            },
+            "volumeMounts": [
+              {
+                "mountPath": "/data",
+                "name": "redis-server-volume"
+              },
+              {
+                "mountPath": "/opt",
+                "name": "opt"
+              }
+            ]
+          }
+        ],
+        "volumes": [
+          {
+            "emptyDir": {},
+            "name": "redis-server-volume"
+          },
+          {
+            "emptyDir": {},
+            "name": "opt"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "apiVersion": "v1",
+  "kind": "Service",
+  "metadata": {
+    "labels": {
+      "app": "redis-sentinel-proxy"
+    },
+    "name": "redis-sentinel-proxy"
+  },
+  "spec": {
+    "ports": [
+      {
+        "name": "redis-sentinel-proxy",
+        "port": 6379,
+        "protocol": "TCP"
+      }
+    ],
+    "selector": {
+      "app": "redis-sentinel-proxy"
+    },
+    "type": "NodePort"
+  }
+}

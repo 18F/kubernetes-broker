@@ -1,0 +1,102 @@
+{
+  "apiVersion": "apps/v1beta1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "redis-sentinel"
+  },
+  "spec": {
+    "replicas": 3,
+    "serviceName": "redis-sentinel",
+    "template": {
+      "metadata": {
+        "annotations": {
+          "pod.beta.kubernetes.io/init-containers": "[{ \"name\": \"k8s-redis-ha-sentinel\", \"image\": \"tarosky/k8s-redis-ha:sentinel-3.0.1\", \"volumeMounts\": [{\"name\": \"opt\", \"mountPath\": \"/opt\"}] }]"
+        },
+        "labels": {
+          "app": "redis-sentinel"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "args": [
+              "/opt/sentinel.conf"
+            ],
+            "command": [
+              "/opt/bin/k8s-redis-ha-sentinel"
+            ],
+            "env": [
+              {
+                "name": "SERVICE",
+                "value": "redis-server"
+              },
+              {
+                "name": "SERVICE_PORT",
+                "value": "redis-server"
+              }
+            ],
+            "image": "redis:3.2",
+            "name": "redis-sentinel",
+            "ports": [
+              {
+                "containerPort": 26379,
+                "name": "redis-sentinel"
+              }
+            ],
+            "readinessProbe": {
+              "exec": {
+                "command": [
+                  "redis-cli",
+                  "-p",
+                  "26379",
+                  "info",
+                  "server"
+                ]
+              }
+            },
+            "volumeMounts": [
+              {
+                "mountPath": "/opt",
+                "name": "opt"
+              }
+            ]
+          },
+          {
+            "env": [
+              {
+                "name": "SERVICE",
+                "value": "redis-server"
+              },
+              {
+                "name": "SERVICE_PORT",
+                "value": "redis-server"
+              },
+              {
+                "name": "SENTINEL",
+                "value": "redis-sentinel"
+              },
+              {
+                "name": "SENTINEL_PORT",
+                "value": "redis-sentinel"
+              }
+            ],
+            "image": "tarosky/k8s-redis-ha:sword-3.0.1",
+            "name": "redis-sword",
+            "volumeMounts": [
+              {
+                "mountPath": "/opt",
+                "name": "opt"
+              }
+            ]
+          }
+        ],
+        "volumes": [
+          {
+            "emptyDir": {},
+            "name": "opt"
+          }
+        ]
+      }
+    }
+  }
+}

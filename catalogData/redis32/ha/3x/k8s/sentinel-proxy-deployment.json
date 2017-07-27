@@ -1,0 +1,45 @@
+{
+  "apiVersion": "apps/v1beta1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "redis-sentinel-proxy"
+  },
+  "spec": {
+    "replicas": 1,
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "redis-sentinel-proxy"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "env": [
+              {
+                "name": "LISTEN_ADDRESS",
+                "value": ":6379"
+              },
+              {
+                "name": "SENTINEL_ADDRESS",
+                "value": "redis-sentinel.default:26379"
+              },
+              {
+                "name": "REDIS_MASTER_NAME",
+                "value": "mymaster"
+              }
+            ],
+            "image": "rogeruiz/redis-sentinel-proxy",
+            "imagePullPolicy": "Always",
+            "name": "redis-sentinel-proxy",
+            "ports": [
+              {
+                "containerPort": 6379
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
