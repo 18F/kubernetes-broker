@@ -9,7 +9,7 @@
       "space": "$space",
       "catalog_service_id": "$catalog_service_id",
       "catalog_plan_id": "$catalog_plan_id",
-      "service_id": "$service_id",
+      "service_id": "$service_id-sentinel",
       "idx_and_short_serviceid": "$idx_and_short_serviceid",
       "managed_by": "TAP"
     }
@@ -57,7 +57,7 @@
             "env": [
               {
                 "name": "SERVICE",
-                "value": "redis-server"
+                "value": "$idx_and_short_serviceid-sentinel"
               },
               {
                 "name": "SERVICE_PORT",
