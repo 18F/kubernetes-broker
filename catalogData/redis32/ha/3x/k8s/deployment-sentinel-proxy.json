@@ -45,7 +45,7 @@
               },
               {
                 "name": "REDIS_MASTER_NAME",
-                "value": "mymaster"
+                "value": "primaryserver"
               }
             ],
             "image": "18fgsa/redis-sentinel-proxy",
