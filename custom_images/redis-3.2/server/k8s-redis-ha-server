@@ -75,8 +75,8 @@ run () {
   # In this case, password is just an ID to distinguish this replica set from
   # other ones in the same Kubernetes cluster.
   {
-    echo "masterauth $service_domain";
-    echo "requirepass $service_domain";
+    echo "masterauth $REDIS_PASSWORD";
+    echo "requirepass $REDIS_PASSWORD";
   } >> /opt/redis.conf
 
   # Replica with smaller number should be the preferred candidate for Master

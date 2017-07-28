@@ -62,7 +62,7 @@ run () {
   fi
 
   < /opt/sentinel.template.conf sed "s/%MASTER%/$master_ip/g" | \
-    sed "s/%PASSWORD%/$service_domain/g" > /opt/sentinel.conf
+    sed "s/%PASSWORD%/$REDIS_PASSWORD/g" > /opt/sentinel.conf
   exec docker-entrypoint.sh redis-sentinel "$@"
 }
 
