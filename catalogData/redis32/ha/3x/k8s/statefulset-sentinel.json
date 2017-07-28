@@ -62,6 +62,15 @@
               {
                 "name": "SERVICE_PORT",
                 "value": "redis-server"
+              },
+              { "name": "MANAGED_BY", "value":"TAP" },
+              { "name": "REDIS_PASSWORD",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "name": "$short_serviceid-redis-ha-credentials",
+                    "key": "redis-password"
+                  }
+                }
               }
             ],
             "image": "redis:3.2",

@@ -69,6 +69,15 @@
               {
                 "name": "SENTINEL_PORT",
                 "value": "redis-sentinel"
+              },
+              { "name": "MANAGED_BY", "value":"TAP" },
+              { "name": "REDIS_PASSWORD",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "name": "$short_serviceid-redis-ha-credentials",
+                    "key": "redis-password"
+                  }
+                }
               }
             ],
             "image": "redis:3.2",
