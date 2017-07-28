@@ -2,15 +2,32 @@
   "apiVersion": "apps/v1beta1",
   "kind": "StatefulSet",
   "metadata": {
-    "name": "redis-sentinel"
+    "name": "$idx_and_short_serviceid-sentinel",
+    "labels": {
+      "org": "$org",
+      "space": "$space",
+      "catalog_service_id": "$catalog_service_id",
+      "catalog_plan_id": "$catalog_plan_id",
+      "service_id": "$service_id",
+      "idx_and_short_serviceid": "$idx_and_short_serviceid",
+      "managed_by": "TAP"
+    }
   },
   "spec": {
     "replicas": 3,
-    "serviceName": "redis-sentinel",
+    "serviceName": "$idx_and_short_serviceid-sentinel",
+    "selectors": {
+      "matchLabels": {
+        "service_id": "$service_id",
+        "idx_and_short_serviceid": "$idx_and_short_serviceid"
+      }
+    },
     "template": {
       "metadata": {
         "labels": {
-          "app": "redis-sentinel"
+          "service_id": "$service_id",
+          "idx_and_short_serviceid": "$idx_and_short_serviceid",
+          "managed_by": "TAP"
         }
       },
       "spec": {

@@ -2,15 +2,32 @@
   "apiVersion": "apps/v1beta1",
   "kind": "StatefulSet",
   "metadata": {
-    "name": "redis-server"
+    "name": "$idx_and_short_serviceid-server",
+    "labels": {
+      "org": "$org",
+      "space": "$space",
+      "catalog_service_id": "$catalog_service_id",
+      "catalog_plan_id": "$catalog_plan_id",
+      "service_id": "$service_id",
+      "idx_and_short_serviceid": "$idx_and_short_serviceid",
+      "managed_by": "TAP"
+    }
   },
   "spec": {
     "replicas": 3,
-    "serviceName": "redis-server",
+    "selector": {
+      "matchLabels": {
+        "service_id": "$service_id",
+        "idx_and_short_serviceid": "$idx_and_short_serviceid"
+      }
+    },
+    "serviceName": "$idx_and_short_serviceid-server",
     "template": {
       "metadata": {
         "labels": {
-          "app": "redis-server"
+          "service_id": "$service_id",
+          "idx_and_short_serviceid": "$idx_and_short_serviceid",
+          "managed_by": "TAP"
         }
       },
       "spec": {
