@@ -37,7 +37,13 @@
         "initContainers": [
           {
             "name": "redis32-sentinel",
-            "image": "18fgsa/redis32-sentinel:latest"
+            "image": "18fgsa/redis32-sentinel:latest",
+            "volumeMounts": [
+              {
+                "name": "opt",
+                "mountPath": "/opt"
+              }
+            ]
           }
         ],
         "containers": [
@@ -85,7 +91,13 @@
                   "server"
                 ]
               }
-            }
+            },
+            "volumeMounts": [
+              {
+                "name": "opt",
+                "mountPath": "/opt"
+              }
+            ]
           }
         ]
       }
