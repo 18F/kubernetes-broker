@@ -32,6 +32,7 @@ import (
 type KubernetesBlueprint struct {
 	Id                    int
 	SecretsJson           []string
+	StatefulSetJson       []string
 	DeploymentJson        []string
 	ServiceJson           []string
 	ServiceAcccountJson   []string
@@ -43,6 +44,7 @@ type KubernetesBlueprint struct {
 
 type KubernetesComponent struct {
 	PersistentVolumeClaims []*apiv1.PersistentVolumeClaim `json:"persistentVolumeClaims"`
+	StatefulSets           []*appsv1beta1.StatefulSet     `json:"statefulSets"`
 	Deployments            []*appsv1beta1.Deployment      `json:"deployments"`
 	Services               []*apiv1.Service               `json:"services"`
 	ServiceAccounts        []*apiv1.ServiceAccount        `json:"serviceAccounts"`
@@ -82,6 +84,12 @@ func ParseKubernetesComponent(blueprint KubernetesBlueprint, instanceId, svcMeta
 		parsedSecrets = append(parsedSecrets, adjust_params(secret, org, space, instanceId, svcMetaId, planMetaId, storageClass, i))
 	}
 	blueprint.SecretsJson = parsedSecrets
+
+	parsedStatefulSets := []string{}
+	for i, statefulSet := range blueprint.StatefulSetJson {
+		parsedStatefulSets = append(parsedStatefulSets, adjust_params(statefulSet, org, space, instanceId, svcMetaId, planMetaId, storageClass, i))
+	}
+	blueprint.StatefulSetJson = parsedStatefulSets
 
 	parsedDeployments := []string{}
 	for i, deployment := range blueprint.DeploymentJson {
@@ -128,6 +136,16 @@ func CreateKubernetesComponentFromBlueprint(blueprint KubernetesBlueprint, encod
 			return result, err
 		}
 		result.Secrets = append(result.Secrets, parsedSecret)
+	}
+
+	for _, statefulSet := range blueprint.StatefulSetJson {
+		parsedStatefulSet := &appsv1beta1.StatefulSet{}
+		err := json.Unmarshal([]byte(statefulSet), parsedStatefulSet)
+		if err != nil {
+			logger.Error("Unmarshalling statefulset error:", err)
+			return result, err
+		}
+		result.StatefulSets = append(result.StatefulSets, parsedStatefulSet)
 	}
 
 	for _, deployment := range blueprint.DeploymentJson {
@@ -211,6 +229,12 @@ func GetKubernetesBlueprint(catalogPath, templateDirName, planDirName, templateI
 				return result, err
 			}
 		}
+	}
+
+	result.StatefulSetJson, err = read_k8s_json_files_with_prefix_from_dir(k8s_plan_path, "statefulset")
+	if err != nil {
+		logger.Error("Error reading statefulset file", err)
+		return result, err
 	}
 
 	result.DeploymentJson, err = read_k8s_json_files_with_prefix_from_dir(k8s_plan_path, "deployment")

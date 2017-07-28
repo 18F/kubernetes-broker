@@ -133,6 +133,20 @@ func (k *K8Fabricator) FabricateService(creds K8sClusterCredentials, space, cf_s
 		}
 	}
 
+	ss.ReportProgress(cf_service_id, "IN_PROGRESS_CREATING_STATEFULSETS", nil)
+	for idx, statefulSet := range component.StatefulSets {
+		ss.ReportProgress(cf_service_id, "IN_PROGRESS_CREATING_STATEFULSET"+strconv.Itoa(idx), nil)
+		for i, container := range statefulSet.Spec.Template.Spec.Containers {
+			statefulSet.Spec.Template.Spec.Containers[i].Env = append(container.Env, extraEnvironments...)
+		}
+
+		_, err = client.AppsV1beta1().StatefulSets(apiv1.NamespaceDefault).Create(statefulSet)
+		if err != nil {
+			ss.ReportProgress(cf_service_id, "FAILED", err)
+			return result, err
+		}
+	}
+
 	ss.ReportProgress(cf_service_id, "IN_PROGRESS_CREATING_DEPLOYMENTS", nil)
 	for idx, deployment := range component.Deployments {
 		ss.ReportProgress(cf_service_id, "IN_PROGRESS_CREATING_DEPLOYMENT"+strconv.Itoa(idx), nil)
@@ -285,6 +299,26 @@ func (k *K8Fabricator) CheckKubernetesServiceHealthByServiceInstanceId(creds K8s
 		return false, err
 	}
 
+	sets, err := client.AppsV1beta1().StatefulSets(apiv1.NamespaceDefault).List(metav1.ListOptions{
+		LabelSelector: selector,
+	})
+	if err != nil {
+		return false, err
+	}
+
+	// if we have statefulsets as part of this deployment then we check their readiness first and bail if not
+	if len(sets.Items) > 0 {
+		logger.Debug("[CheckKubernetesServiceHealthByServiceInstanceId] Sets:", sets)
+
+		for _, set := range sets.Items {
+			logger.Debug("[CheckKubernetesServiceHealthByServiceInstanceId] Set Replicas Want/Have:", set.Spec.ServiceName, *set.Spec.Replicas, set.Status.Replicas)
+			if *set.Spec.Replicas != set.Status.Replicas {
+				logger.Debug("[CheckKubernetesServiceHealthByServiceInstanceId] Not all replicas are up.")
+				return false, fmt.Errorf("Not all replicas are up. Want %s, Have %s", set.Spec.Replicas, set.Status.Replicas)
+			}
+		}
+	}
+
 	pods, err := client.CoreV1().Pods(apiv1.NamespaceDefault).List(metav1.ListOptions{
 		LabelSelector: selector,
 	})
@@ -355,6 +389,27 @@ func (k *K8Fabricator) DeleteAllByServiceId(creds K8sClusterCredentials, service
 		err = client.CoreV1().Services(apiv1.NamespaceDefault).Delete(name, &metav1.DeleteOptions{})
 		if err != nil {
 			logger.Error("[DeleteAllByServiceId] Delete service failed:", err)
+			return err
+		}
+	}
+
+	statefulSets, err := client.AppsV1beta1().StatefulSets(apiv1.NamespaceDefault).List(metav1.ListOptions{
+		LabelSelector: selector,
+	})
+	if err != nil {
+		logger.Error("[DeleteAllByServiceId] List statefulsets failed:", err)
+		return err
+	}
+	for _, statefulSet := range statefulSets.Items {
+		name = statefulSet.ObjectMeta.Name
+		logger.Debug("[DeleteAllByServiceId] Delete statefulset:", name)
+
+		foreground := metav1.DeletePropagationForeground
+		err = client.AppsV1beta1().StatefulSets(apiv1.NamespaceDefault).Delete(name, &metav1.DeleteOptions{
+			PropagationPolicy: &foreground,
+		})
+		if err != nil {
+			logger.Error("[DeleteAllByServiceId] Delete statefulset failed:", err)
 			return err
 		}
 	}
@@ -701,8 +756,14 @@ func (k *K8Fabricator) GetAllPodsEnvsByServiceId(creds K8sClusterCredentials, sp
 	if err != nil {
 		return result, err
 	}
-	if len(deployments.Items) == 0 {
-		return result, fmt.Errorf("No deployments associated with the service: %s", service_id)
+	sets, err := client.AppsV1beta1().StatefulSets(apiv1.NamespaceDefault).List(metav1.ListOptions{
+		LabelSelector: selector,
+	})
+	if err != nil {
+		return result, err
+	}
+	if len(deployments.Items) == 0 && len(sets.Items) == 0{
+		return result, fmt.Errorf("No deployments or statefulsets associated with the service: %s", service_id)
 	}
 
 	secrets, err := client.CoreV1().Secrets(apiv1.NamespaceDefault).List(metav1.ListOptions{
@@ -736,6 +797,31 @@ func (k *K8Fabricator) GetAllPodsEnvsByServiceId(creds K8sClusterCredentials, sp
 		}
 		result = append(result, pod)
 	}
+
+	for _, set := range sets.Items {
+		pod := PodEnvs{}
+		pod.DeploymentName = set.Name
+		pod.Containers = []ContainerSimple{}
+
+		for _, container := range set.Spec.Template.Spec.Containers {
+			simpleContainer := ContainerSimple{}
+			simpleContainer.Name = container.Name
+			simpleContainer.Envs = map[string]string{}
+
+			for _, env := range container.Env {
+				if env.Value == "" && env.ValueFrom.SecretKeyRef != nil {
+					logger.Debug("Empty env value, searching env variable in secrets")
+					simpleContainer.Envs[env.Name] = findSecretValue(secrets, env.ValueFrom.SecretKeyRef)
+				} else {
+					simpleContainer.Envs[env.Name] = env.Value
+				}
+
+			}
+			pod.Containers = append(pod.Containers, simpleContainer)
+		}
+		result = append(result, pod)
+	}
+
 	return result, nil
 }
 

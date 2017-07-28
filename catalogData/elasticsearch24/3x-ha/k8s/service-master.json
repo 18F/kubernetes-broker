@@ -1,8 +1,8 @@
 {
-  "kind": "Secret",
+  "kind": "Service",
   "apiVersion": "v1",
   "metadata": {
-    "name": "$short_serviceid-es-secret-keyfile",
+    "name": "$idx_and_short_serviceid",
     "labels": {
       "org": "$org",
       "space": "$space",
@@ -13,9 +13,18 @@
       "managed_by": "TAP"
     }
   },
-  "data": {
-    "password": "$base64-$random1",
-    "cluster-name": "$base64-$random4",
-    "discovery-service": "$base64-$short_serviceid"
+  "spec": {
+    "type": "NodePort",
+    "selector": {
+      "service_id": "$service_id",
+      "component": "master"
+    },
+    "ports": [
+      {
+        "name": "http",
+        "protocol": "TCP",
+        "port": 9200
+      }
+    ]
   }
 }
