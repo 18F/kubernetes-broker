@@ -2,7 +2,7 @@
   "apiVersion": "apps/v1beta1",
   "kind": "Deployment",
   "metadata": {
-    "name": "$idx_and_short_serviceid",
+    "name": "$idx_and_short_serviceid-proxy",
     "labels": {
       "org": "$org",
       "space": "$space",
