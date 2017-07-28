@@ -48,7 +48,7 @@
                 "value": "primaryserver"
               }
             ],
-            "image": "18fgsa/redis31-proxy:latest",
+            "image": "18fgsa/redis32-proxy:latest",
             "imagePullPolicy": "Always",
             "name": "redis32-proxy",
             "ports": [
