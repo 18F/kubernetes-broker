@@ -35,8 +35,8 @@
       "spec": {
         "initContainers": [
           {
-            "name": "k8s-redis-ha-sentinel",
-            "image": "18fgsa/k8s-redis-ha:latest",
+            "name": "redis32-server",
+            "image": "18fgsa/redis32-server:latest",
             "volumeMounts": [
               {
                 "name": "opt",
