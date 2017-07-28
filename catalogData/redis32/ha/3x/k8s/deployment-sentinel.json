@@ -1,6 +1,6 @@
 {
   "apiVersion": "apps/v1beta1",
-  "kind": "StatefulSet",
+  "kind": "Deployment",
   "metadata": {
     "name": "$idx_and_short_serviceid-sentinel",
     "labels": {
@@ -37,13 +37,7 @@
         "initContainers": [
           {
             "name": "k8s-redis-ha-sentinel",
-            "image": "18fgsa/k8s-redis-ha:latest",
-            "volumeMounts": [
-              {
-                "name": "opt",
-                "mountPath": "/opt"
-              }
-            ]
+            "image": "18fgsa/k8s-redis-ha:latest"
           }
         ],
         "containers": [
@@ -91,47 +85,7 @@
                   "server"
                 ]
               }
-            },
-            "volumeMounts": [
-              {
-                "mountPath": "/opt",
-                "name": "opt"
-              }
-            ]
-          },
-          {
-            "env": [
-              {
-                "name": "SERVICE",
-                "value": "redis-server"
-              },
-              {
-                "name": "SERVICE_PORT",
-                "value": "redis-server"
-              },
-              {
-                "name": "SENTINEL",
-                "value": "redis-sentinel"
-              },
-              {
-                "name": "SENTINEL_PORT",
-                "value": "redis-sentinel"
-              }
-            ],
-            "image": "tarosky/k8s-redis-ha:sword-3.0.1",
-            "name": "redis-sword",
-            "volumeMounts": [
-              {
-                "mountPath": "/opt",
-                "name": "opt"
-              }
-            ]
-          }
-        ],
-        "volumes": [
-          {
-            "emptyDir": {},
-            "name": "opt"
+            }
           }
         ]
       }
