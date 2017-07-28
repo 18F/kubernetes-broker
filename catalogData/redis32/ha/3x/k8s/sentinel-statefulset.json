@@ -4,6 +4,7 @@
   "metadata": {
     "name": "$idx_and_short_serviceid-sentinel",
     "labels": {
+      "component": "sentinel",
       "org": "$org",
       "space": "$space",
       "catalog_service_id": "$catalog_service_id",
@@ -18,6 +19,7 @@
     "serviceName": "$idx_and_short_serviceid-sentinel",
     "selectors": {
       "matchLabels": {
+        "component": "sentinel",
         "service_id": "$service_id",
         "idx_and_short_serviceid": "$idx_and_short_serviceid"
       }
@@ -25,6 +27,7 @@
     "template": {
       "metadata": {
         "labels": {
+          "component": "sentinel",
           "service_id": "$service_id",
           "idx_and_short_serviceid": "$idx_and_short_serviceid",
           "managed_by": "TAP"
