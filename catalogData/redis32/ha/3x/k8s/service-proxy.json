@@ -11,7 +11,7 @@
       "idx_and_short_serviceid": "$idx_and_short_serviceid",
       "managed_by": "TAP"
     },
-    "name": "$idx_and_short_serviceid",
+    "name": "$idx_and_short_serviceid-proxy",
     "annotations": {
       "service.beta.kubernetes.io/aws-load-balancer-internal": "0.0.0.0/0"
     }
