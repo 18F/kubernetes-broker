@@ -17,6 +17,7 @@
     "replicas": 2,
     "selector": {
       "matchLabels": {
+        "component": "proxy",
         "service_id": "$service_id",
         "idx_and_short_serviceid": "$idx_and_short_serviceid"
       }
@@ -24,6 +25,7 @@
     "template": {
       "metadata": {
         "labels": {
+          "component": "proxy",
           "service_id": "$service_id",
           "idx_and_short_serviceid": "$idx_and_short_serviceid",
           "managed_by": "TAP"

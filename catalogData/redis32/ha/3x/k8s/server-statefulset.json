@@ -17,6 +17,7 @@
     "replicas": 3,
     "selector": {
       "matchLabels": {
+        "component": "server",
         "service_id": "$service_id",
         "idx_and_short_serviceid": "$idx_and_short_serviceid"
       }
@@ -25,6 +26,7 @@
     "template": {
       "metadata": {
         "labels": {
+          "component": "server",
           "service_id": "$service_id",
           "idx_and_short_serviceid": "$idx_and_short_serviceid",
           "managed_by": "TAP"

@@ -22,7 +22,8 @@
       }
     ],
     "selector": {
-      "service_id": "$service_id"
+      "service_id": "$service_id",
+      "component": "sentinel"
     }
   }
 }
