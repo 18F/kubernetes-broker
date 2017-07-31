@@ -9,7 +9,7 @@ readonly sentinel_domain="_$SENTINEL_PORT._tcp.$SENTINEL.$namespace.svc.cluster.
 
 redis_info () {
   set +e
-  timeout 10 redis-cli -h "$1" -a "$service_domain" info replication
+  timeout 10 redis-cli -h "$1" -a "$REDIS_PASSWORD" info replication
   set -e
 }
 
