@@ -1,4 +1,4 @@
-FROM busybox
+FROM debian:jessie-slim
 
 ENV LISTEN_ADDRESS=:6379
 ENV SENTINEL_ADDRESS=sentinel:26379
