@@ -57,7 +57,7 @@
             "env": [
               {
                 "name": "SERVICE",
-                "value": "$idx_and_short_serviceid-sentinel"
+                "value": "$idx_and_short_serviceid-server"
               },
               {
                 "name": "SERVICE_PORT",
