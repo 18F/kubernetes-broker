@@ -6,8 +6,6 @@ ENV REDIS_MASTER_NAME=master
 
 ADD ["https://github.com/18f/redis-sentinel-proxy/releases/download/v1.0.0/redis-sentinel-proxy_linux_amd64", "/redis-sentinel-proxy"]
 
-CMD /redis-sentinel-proxy \
-      -listen $LISTEN_ADDRESS \
-      -sentinel $SENTINEL_ADDRESS \
-      -master $REDIS_MASTER_NAME
+CMD ["/run.sh"]
 
+ENTRYPOINT ["bash", "-c"]
