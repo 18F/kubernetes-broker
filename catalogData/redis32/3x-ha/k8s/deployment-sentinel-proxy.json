@@ -41,7 +41,7 @@
               },
               {
                 "name": "SENTINEL_ADDRESS",
-                "value": "redis-sentinel.default:26379"
+                "value": "$idx_and_short_serviceid-sentinel.default:26379"
               },
               {
                 "name": "REDIS_MASTER_NAME",
