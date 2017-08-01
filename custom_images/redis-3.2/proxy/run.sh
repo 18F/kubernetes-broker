@@ -2,9 +2,10 @@
 
 set -eux
 
-chmod +x redis-sentinel-proxy
+mkdir -p /usr/local/bin
+cp /redis-sentinel-proxy /usr/local/bin/redis-sentinel-proxy
 
-/redis-sentinel-proxy \
+/usr/local/bin/redis-sentinel-proxy \
       -listen $LISTEN_ADDRESS \
       -sentinel $SENTINEL_ADDRESS \
       -master $REDIS_MASTER_NAME
