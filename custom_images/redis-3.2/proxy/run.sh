@@ -4,6 +4,7 @@ set -eux
 
 mkdir -p /usr/local/bin
 cp /redis-sentinel-proxy /usr/local/bin/redis-sentinel-proxy
+chmod -R +x /usr/local/bin
 
 /usr/local/bin/redis-sentinel-proxy \
       -listen $LISTEN_ADDRESS \
