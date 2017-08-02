@@ -124,6 +124,8 @@ run () {
       >&2 echo "Unable to get Replication INFO: $s ($s_ip)"
       continue
     fi
+    echo "slave-announce-ip $s_ip" >> /opt/redis.conf
+
   done
 
   if [ "$only_server" = true ]; then
