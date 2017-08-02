@@ -77,6 +77,7 @@ run () {
   {
     echo "masterauth $REDIS_PASSWORD";
     echo "requirepass $REDIS_PASSWORD";
+    echo "slave-announce-ip $(hostname -i)";
   } >> /opt/redis.conf
 
   # Replica with smaller number should be the preferred candidate for Master
@@ -124,7 +125,6 @@ run () {
       >&2 echo "Unable to get Replication INFO: $s ($s_ip)"
       continue
     fi
-    echo "slave-announce-ip $s_ip" >> /opt/redis.conf
 
   done
 
