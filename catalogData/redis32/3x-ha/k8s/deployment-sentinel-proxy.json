@@ -48,9 +48,9 @@
                 "value": "primaryserver"
               }
             ],
-            "image": "18fgsa/redis32-proxy:latest",
-            "imagePullPolicy": "Always",
-            "name": "redis32-proxy",
+            "image": "18fgsa/redis-sentinel-proxy:latest",
+            "imagePullPolicy": "IfNotPresent",
+            "name": "redis-sentinel-proxy",
             "ports": [
               {
                 "containerPort": 6379
