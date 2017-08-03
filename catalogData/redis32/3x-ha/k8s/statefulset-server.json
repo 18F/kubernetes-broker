@@ -99,8 +99,8 @@
             },
             "volumeMounts": [
               {
-                "mountPath": "/data",
-                "name": "redis-server-volume"
+                "mountPath": "/usr/share/redis/data",
+                "name": "data"
               },
               {
                 "mountPath": "/opt",
@@ -120,6 +120,22 @@
           }
         ]
       }
-    }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "data"
+        },
+        "spec": {
+          "accessModes": ["ReadWriteOnce"],
+          "storageClassName": "$storage_class",
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
   }
 }
