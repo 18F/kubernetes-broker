@@ -99,7 +99,7 @@
             },
             "volumeMounts": [
               {
-                "mountPath": "/usr/share/redis/data",
+                "mountPath": "/data",
                 "name": "data"
               },
               {
@@ -110,10 +110,6 @@
           }
         ],
         "volumes": [
-          {
-            "emptyDir": {},
-            "name": "redis-server-volume"
-          },
           {
             "emptyDir": {},
             "name": "opt"
