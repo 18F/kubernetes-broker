@@ -17,6 +17,21 @@
   "spec": {
     "replicas": 3,
     "serviceName": "$idx_and_short_serviceid-sentinel",
+    "affinity": {
+      "podAntiAffinity": {
+        "requiredDuringSchedulingIgnoredDuringExecution": [
+          {
+            "topologyKey": "kubernetes.io/hostname",
+            "labelSelector": {
+              "matchLabels": {
+                "idx_and_short_serviceid": "$idx_short_serviceid",
+                "component": "sentinel"
+              }
+            }
+          }
+        ]
+      }
+    },
     "selectors": {
       "matchLabels": {
         "component": "sentinel",
