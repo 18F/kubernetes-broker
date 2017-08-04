@@ -29,7 +29,7 @@
             "topologyKey": "kubernetes.io/hostname",
             "labelSelector": {
               "matchLabels": {
-                "idx_and_short_serviceid": "$idx_short_serviceid",
+                "idx_and_short_serviceid": "$idx_and_short_serviceid",
                 "component": "proxy"
               }
             }
