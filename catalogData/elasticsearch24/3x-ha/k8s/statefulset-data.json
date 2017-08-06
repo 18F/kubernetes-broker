@@ -73,12 +73,12 @@
             },
             "resources": {
               "requests": {
-                "memory": "1792M",
+                "memory": "4096M",
                 "cpu": "0"
               },
               "limits": {
-                "memory": "3584M",
-                "cpu": 1
+                "memory": "8192M",
+                "cpu": 3
               }
             },
             "readinessProbe": {
@@ -141,7 +141,7 @@
               },
               {
                 "name": "ES_HEAP_SIZE",
-                "value": "1792m"
+                "value": "4096m"
               },
               {
                 "name": "MANAGED_BY",
