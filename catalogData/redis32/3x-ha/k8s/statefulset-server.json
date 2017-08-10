@@ -78,6 +78,10 @@
                 "value": "redis-server"
               },
               {
+                "name": "SENTINEL_HOST",
+                "value": "$idx_and_short_serviceid-sentinel.default"
+              },
+              {
                 "name": "SENTINEL",
                 "value": "$service_id-sentinel"
               },
@@ -98,6 +102,15 @@
             "image": "redis:3.2.10",
             "imagePullPolicy": "IfNotPresent",
             "name": "redis-server",
+            "lifecycle": {
+              "preStop": {
+                "exec": {
+                  "command": [
+                    "pre-stop.sh"
+                  ]
+                }
+              }
+            },
             "ports": [
               {
                 "containerPort": 6379,
