@@ -49,6 +49,14 @@
       "spec": {
         "containers": [
           {
+            "resources": {
+              "requests": {
+                "memory": "64M"
+              },
+              "limits": {
+                "memory": "0"
+              }
+            },
             "env": [
               {
                 "name": "LISTEN_ADDRESS",

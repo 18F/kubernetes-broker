@@ -63,6 +63,14 @@
         ],
         "containers": [
           {
+            "resources": {
+              "requests": {
+                "memory": "64M"
+              },
+              "limits": {
+                "memory": "0"
+              }
+            },
             "args": [
               "/opt/sentinel.conf"
             ],
