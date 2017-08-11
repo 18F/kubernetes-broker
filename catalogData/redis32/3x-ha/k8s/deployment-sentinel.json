@@ -65,10 +65,10 @@
           {
             "resources": {
               "requests": {
-                "memory": "64M"
+                "memory": "0"
               },
               "limits": {
-                "memory": "0"
+                "memory": "64M"
               }
             },
             "args": [
