@@ -62,6 +62,14 @@
         ],
         "containers": [
           {
+            "resources": {
+              "requests": {
+                "memory": "512M"
+              },
+              "limits": {
+                "memory": "0"
+              }
+            },
             "args": [
               "/opt/redis.conf"
             ],
