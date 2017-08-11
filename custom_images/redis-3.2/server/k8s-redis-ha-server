@@ -69,7 +69,7 @@ slave_priority () {
 # It's okay to fail during failover or other unpredictable states.
 # This prevents from making things much worse.
 run () {
-  cp /opt/redis.template.conf /opt/redis.conf
+  cp -p /opt/redis.template.conf /opt/redis.conf
 
   # Domain name of the Service is also used as the password.
   # In this case, password is just an ID to distinguish this replica set from
