@@ -1,6 +1,0 @@
-{
-  "id": "7238138e-722b-11e7-9e57-c30dd7276550",
-  "name": "3x-ha",
-  "description": "Redis 3 node cluster with persistent storage.",
-  "free": true
-}
