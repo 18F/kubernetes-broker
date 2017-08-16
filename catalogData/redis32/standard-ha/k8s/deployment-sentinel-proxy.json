@@ -74,7 +74,7 @@
                 "value": "primaryserver"
               }
             ],
-            "image": "18fgsa/redis-sentinel-proxy:1.0.1",
+            "image": "18fgsa/redis:3.2.10",
             "imagePullPolicy": "IfNotPresent",
             "name": "redis-sentinel-proxy",
             "ports": [
