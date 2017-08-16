@@ -6,25 +6,6 @@ namespace="$(< /var/run/secrets/kubernetes.io/serviceaccount/namespace)"
 readonly namespace
 readonly service_domain="_$SERVICE_PORT._tcp.$SERVICE.$namespace.svc.cluster.local"
 
-server_host="${SERVICE}.default"
-server_port="6379" # Default Redis Server Port
-
-wait_for_server () {
-  counter=120
-  until [ $counter -le 0 ]
-  do
-    nc -z "${server_host}" "${server_port}"
-    if [[ $? -gt 0 ]]
-    then
-      let counter-=1
-      sleep 5
-    else
-      return 0
-    fi
-  done
-  return 1
-}
-
 redis_info () {
   set +e
   timeout 10 redis-cli -h "$1" -a "$REDIS_PASSWORD" info replication
@@ -43,7 +24,7 @@ server_domains () {
   /opt/bin/dig-srv "$1" | awk '{print $NF}' | sed 's/\.$//g'
 }
 
-run () {
+find_master () {
   # It's okay to fail during failover or other unpredictable states.
   # This prevents from making things much worse.
 
@@ -75,21 +56,26 @@ run () {
     fi
   done
 
-  if [ -z "$master_ip" ]; then
-    >&2 echo "Master not found."
-    exit 1
-  fi
+  echo ${master_ip}
 
-  < /opt/sentinel.template.conf sed "s/%MASTER%/$master_ip/g" | \
-    sed "s/%PASSWORD%/$REDIS_PASSWORD/g" > /opt/sentinel.conf
-  exec docker-entrypoint.sh redis-sentinel "$@"
 }
 
-if wait_for_server
-then
-  run "$@"
-else
-  echo "Failed to wait for Redis Server."
-  exit 1
-fi
+counter=120
+until [ $counter -le 0 ]
+do
+  master=$(find_master)
+  if [ -z "${master}" ]
+  then
+    let counter-=1
+    echo "$(date) Waiting for master..."
+    sleep 5
+  else
+    break
+  fi
+done
+
+< /opt/sentinel.template.conf sed "s/%MASTER%/$master/g" | \
+  sed "s/%PASSWORD%/$REDIS_PASSWORD/g" > /opt/sentinel.conf
+
+exec docker-entrypoint.sh redis-sentinel "$@"
 
