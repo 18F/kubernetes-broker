@@ -51,7 +51,7 @@
           {
             "resources": {
               "requests": {
-                "memory": "0"
+                "memory": "48M"
               },
               "limits": {
                 "memory": "64M"
