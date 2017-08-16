@@ -8,9 +8,6 @@ ADD ["https://github.com/18f/redis-sentinel-proxy/releases/download/v1.0.1/redis
 
 COPY ["k8s-redis-sentinel-proxy", "run.sh", "/"]
 
-RUN apt-get update && apt-get install -y \
-  netcat
-
 CMD ["/run.sh"]
 
 ENTRYPOINT ["bash", "-c"]
