@@ -1,0 +1,34 @@
+#!/bin/bash
+
+set -eux
+
+sentinel_host=$(echo "${SENTINEL_ADDRESS}" | cut -d ":" -f 1)
+sentinel_port=$(echo "${SENTINEL_ADDRESS}" | cut -d ":" -f 2)
+
+wait_for_sentinel () {
+  counter=120
+  until [ $counter -le 0 ]
+  do
+    if [[ ! $(nc -z "${sentinel_host}" "${sentinel_port}") ]]
+    then
+      let counter-=1
+      sleep 5
+    else
+      return 0
+    fi
+  done
+  return 1
+}
+
+
+if wait_for_sentinel
+then
+  /opt/bin/redis-sentinel-proxy \
+        -listen $LISTEN_ADDRESS \
+        -sentinel $SENTINEL_ADDRESS \
+        -master $REDIS_MASTER_NAME
+else
+  echo "Failed to wait for Redis Sentinel."
+  exit 1
+fi
+

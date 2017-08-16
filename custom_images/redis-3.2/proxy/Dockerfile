@@ -6,7 +6,11 @@ ENV REDIS_MASTER_NAME=master
 
 ADD ["https://github.com/18f/redis-sentinel-proxy/releases/download/v1.0.1/redis-sentinel-proxy_linux_amd64", "/redis-sentinel-proxy"]
 
-COPY ["run.sh", "/"]
+COPY ["k8s-redis-sentinel-proxy", "run.sh", "/"]
+
+RUN apt-get update && apt-get install -y \
+  netcat
+
 CMD ["/run.sh"]
 
 ENTRYPOINT ["bash", "-c"]
