@@ -22,21 +22,6 @@
         "idx_and_short_serviceid": "$idx_and_short_serviceid"
       }
     },
-    "affinity": {
-      "podAntiAffinity": {
-        "requiredDuringSchedulingIgnoredDuringExecution": [
-          {
-            "topologyKey": "kubernetes.io/hostname",
-            "labelSelector": {
-              "matchLabels": {
-                "idx_and_short_serviceid": "$idx_and_short_serviceid",
-                "component": "proxy"
-              }
-            }
-          }
-        ]
-      }
-    },
     "template": {
       "metadata": {
         "labels": {
@@ -47,6 +32,21 @@
         }
       },
       "spec": {
+        "affinity": {
+          "podAntiAffinity": {
+            "requiredDuringSchedulingIgnoredDuringExecution": [
+              {
+                "topologyKey": "kubernetes.io/hostname",
+                "labelSelector": {
+                  "matchLabels": {
+                    "idx_and_short_serviceid": "$idx_and_short_serviceid",
+                    "component": "proxy"
+                  }
+                }
+              }
+            ]
+          }
+        },
         "containers": [
           {
             "resources": {
