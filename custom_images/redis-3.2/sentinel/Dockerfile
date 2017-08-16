@@ -5,9 +5,6 @@ ADD ["https://github.com/18f/dig-srv/releases/download/v1.0.0/dig-srv_linux_amd6
 
 COPY ["sentinel.template.conf", "k8s-redis-ha-sentinel", "run.sh", "/"]
 
-RUN apt-get update && apt-get install -y \
-  netcat
-
 CMD ["/run.sh"]
 
 ENTRYPOINT ["bash", "-c"]
