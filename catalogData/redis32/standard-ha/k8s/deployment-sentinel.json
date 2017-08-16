@@ -49,18 +49,6 @@
             ]
           }
         },
-        "initContainers": [
-          {
-            "name": "redis-sentinel-init",
-            "image": "18fgsa/redis-sentinel-init:3.2.10",
-            "volumeMounts": [
-              {
-                "name": "opt",
-                "mountPath": "/opt"
-              }
-            ]
-          }
-        ],
         "containers": [
           {
             "resources": {
@@ -96,7 +84,7 @@
                 }
               }
             ],
-            "image": "redis:3.2.10",
+            "image": "18fgsa/redis:3.2.10",
             "imagePullPolicy": "IfNotPresent",
             "name": "redis-sentinel",
             "ports": [
@@ -115,19 +103,7 @@
                   "server"
                 ]
               }
-            },
-            "volumeMounts": [
-              {
-                "name": "opt",
-                "mountPath": "/opt"
-              }
-            ]
-          }
-        ],
-        "volumes": [
-          {
-            "emptyDir": {},
-            "name": "opt"
+            }
           }
         ]
       }
