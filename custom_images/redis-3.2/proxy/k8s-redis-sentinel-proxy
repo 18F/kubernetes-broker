@@ -1,35 +1,20 @@
 #!/bin/bash
 
-set -eux
+set -ux
 
-sentinel_host=$(echo "${SENTINEL_ADDRESS}" | cut -d ":" -f 1)
-sentinel_port=$(echo "${SENTINEL_ADDRESS}" | cut -d ":" -f 2)
-
-wait_for_sentinel () {
-  counter=120
-  until [ $counter -le 0 ]
-  do
-    nc -z "${sentinel_host}" "${sentinel_port}"
-    if [[ $? -gt 0 ]]
-    then
-      let counter-=1
-      sleep 5
-    else
-      return 0
-    fi
-  done
-  return 1
-}
-
-
-if wait_for_sentinel
-then
+counter=120
+until [ "${counter}" -le 0 ]
+do
   /opt/bin/redis-sentinel-proxy \
-        -listen $LISTEN_ADDRESS \
-        -sentinel $SENTINEL_ADDRESS \
-        -master $REDIS_MASTER_NAME
-else
-  echo "Failed to wait for Redis Sentinel."
-  exit 1
-fi
-
+        -listen "${LISTEN_ADDRESS}" \
+        -sentinel "${SENTINEL_ADDRESS}" \
+        -master "${REDIS_MASTER_NAME}"
+  if [[ $? -gt 0 ]]
+  then
+    let counter-=1
+    echo "$(date) Waiting for sentinel..."
+    sleep 5
+  else
+    return 0
+  fi
+done
