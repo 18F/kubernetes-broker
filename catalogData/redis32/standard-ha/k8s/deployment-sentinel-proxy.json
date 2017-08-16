@@ -57,6 +57,9 @@
                 "memory": "64M"
               }
             },
+            "command": [
+              "/opt/bin/k8s-redis-sentinel-proxy"
+            ],
             "env": [
               {
                 "name": "LISTEN_ADDRESS",
