@@ -9,7 +9,8 @@ wait_for_sentinel () {
   counter=120
   until [ $counter -le 0 ]
   do
-    if [[ ! $(nc -z "${sentinel_host}" "${sentinel_port}") ]]
+    nc -z "${sentinel_host}" "${sentinel_port}"
+    if [[ $? -gt 0 ]]
     then
       let counter-=1
       sleep 5

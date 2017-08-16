@@ -13,7 +13,8 @@ wait_for_server () {
   counter=120
   until [ $counter -le 0 ]
   do
-    if [[ ! $(nc -z "${server_host}" "${server_port}") ]]
+    nc -z "${server_host}" "${server_port}"
+    if [[ $? -gt 0 ]]
     then
       let counter-=1
       sleep 5
