@@ -79,7 +79,7 @@
               },
               {
                 "name": "SENTINEL",
-                "value": "$service_id-sentinel"
+                "value": "$idx_and_short_serviceid-sentinel"
               },
               {
                 "name": "SENTINEL_PORT",
