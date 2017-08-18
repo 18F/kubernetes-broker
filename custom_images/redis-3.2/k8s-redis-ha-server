@@ -3,7 +3,7 @@
 set -eux
 
 # Bring in the shared functions and variables
-. bootstrap.sh
+. /opt/bin/bootstrap.sh
 
 slave_priority () {
   local no
