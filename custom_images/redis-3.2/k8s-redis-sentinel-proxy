@@ -2,19 +2,7 @@
 
 set -ux
 
-counter=120
-until [ "${counter}" -le 0 ]
-do
-  /opt/bin/redis-sentinel-proxy \
-        -listen "${LISTEN_ADDRESS}" \
-        -sentinel "${SENTINEL_ADDRESS}" \
-        -master "${REDIS_MASTER_NAME}"
-  if [[ $? -gt 0 ]]
-  then
-    let counter-=1
-    echo "$(date) Waiting for sentinel..."
-    sleep 5
-  else
-    return 0
-  fi
-done
+/opt/bin/redis-sentinel-proxy \
+  -listen "${LISTEN_ADDRESS}" \
+  -sentinel "${SENTINEL_ADDRESS}" \
+  -master "${REDIS_MASTER_NAME}"
