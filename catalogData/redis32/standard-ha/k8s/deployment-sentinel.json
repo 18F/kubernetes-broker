@@ -74,6 +74,14 @@
                 "name": "SERVICE_PORT",
                 "value": "redis-server"
               },
+              {
+                "name": "SENTINEL",
+                "value": "$idx_and_short_serviceid-sentinel"
+              },
+              {
+                "name": "SENTINEL_PORT",
+                "value": "redis-sentinel"
+              },
               { "name": "MANAGED_BY", "value":"TAP" },
               { "name": "REDIS_PASSWORD",
                 "valueFrom": {
