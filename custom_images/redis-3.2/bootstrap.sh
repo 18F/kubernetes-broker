@@ -53,6 +53,7 @@ reset_all_sentinels () {
     # Ignoring failed sentinels are allowed, since most of the sentinels are
     # expected to be alive.
     reset_sentinel "$s_ip"
+    sleep 33
   done
 }
 
