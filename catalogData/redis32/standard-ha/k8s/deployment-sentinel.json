@@ -112,6 +112,38 @@
                 ]
               }
             }
+          },
+          {
+            "resources": {
+              "limits": {
+                "memory": "32M"
+              }
+            },
+            "command": [
+              "/opt/bin/sword"
+            ],
+            "env": [
+              {
+                "name": "SERVICE",
+                "value": "$idx_and_short_serviceid-server"
+              },
+              {
+                "name": "SERVICE_PORT",
+                "value": "redis-server"
+              },
+              {
+                "name": "SENTINEL",
+                "value": "$idx_and_short_serviceid-sentinel"
+              },
+              {
+                "name": "SENTINEL_PORT",
+                "value": "redis-sentinel"
+              },
+              { "name": "MANAGED_BY", "value":"TAP" }
+            ],
+            "image": "18fgsa/redis:3.2.10",
+            "imagePullPolicy": "IfNotPresent",
+            "name": "redis-sword"
           }
         ]
       }
