@@ -28,6 +28,8 @@ run () {
     echo "slave-announce-ip $(hostname -i)";
   } >> /opt/redis.conf
 
+  reset_all_sentinels
+
   # Replica with smaller number should be the preferred candidate for Master
   # over ones with larger number.
   # This is because replicas with larger number have higher chance of being
@@ -92,7 +94,6 @@ run () {
     echo "slaveof $master_ip 6379" >> /opt/redis.conf
   fi
 
-  reset_all_sentinels
   exec docker-entrypoint.sh redis-server "$@"
 }
 
