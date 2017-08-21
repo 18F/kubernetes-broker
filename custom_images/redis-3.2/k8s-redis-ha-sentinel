@@ -64,5 +64,5 @@ done
 < /opt/sentinel.template.conf sed "s/%MASTER%/$master/g" | \
   sed "s/%PASSWORD%/$REDIS_PASSWORD/g" > /opt/sentinel.conf
 
-reset_all_sentinels
+#reset_all_sentinels
 exec docker-entrypoint.sh redis-sentinel "$@"
