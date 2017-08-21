@@ -66,4 +66,3 @@ done
 
 reset_all_sentinels
 exec docker-entrypoint.sh redis-sentinel "$@"
-

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+exit 0
+
 set -eux
 
 primary_server_ip_from_sentinel=$(redis-cli --raw -h $SENTINEL_HOST -p 26379 SENTINEL get-master-addr-by-name primaryserver | head -1)
