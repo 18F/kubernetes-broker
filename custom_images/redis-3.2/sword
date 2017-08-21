@@ -147,5 +147,5 @@ run () {
 
 while true; do
   sleep 60
-  run
+#  run
 done
