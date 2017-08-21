@@ -6,11 +6,11 @@ set -eu
 . /opt/bin/bootstrap.sh
 
 sentinel_master () {
-  redis-cli -p 26379 --raw sentinel master mymaster
+  redis-cli -p 26379 --raw sentinel master primaryserver
 }
 
 sword_reset_sentinel () {
-  redis-cli -p 26379 --raw sentinel reset mymaster
+  redis-cli -p 26379 --raw sentinel reset primaryserver
 }
 
 sentinel_num_slaves () {
@@ -120,7 +120,7 @@ run () {
   num_sentinels="$(sentinel_num_sentinels "$master")"
   readonly num_sentinels
   local srv_sentinel_count
-  srv_sentinel_count="$(server_domains "$service_sentinel_domain" | wc -l)"
+  srv_sentinel_count="$(server_domains "$sentinel_domain" | wc -l)"
   readonly srv_sentinel_count
 
   if [ "$num_slaves" = '0' ] && [ "$master_down" = 'true' ]; then
@@ -130,7 +130,7 @@ run () {
     # To let the Sentinel find the
     echo "Sentinel has no slaves and master is down"
     reflect_recreated_servers
-  elif [ "$(echo "$srv_count - 1" | bc)" -lt "$num_slaves" ]; then
+  elif [ "$(($srv_count - 1))" -lt "$num_slaves" ]; then
     # If Sentinel recognizes more Slaves than what really exist, the Sentinel
     # might have stale data.
     # This happens when the Redis server StatefulSet is scaled in,
@@ -139,7 +139,7 @@ run () {
     # To tell that this is not a failure but a scale in, resetting is needed.
     echo "Sentinel has more slaves than we expect"
     reflect_scale_in
-  elif [ "$(echo "$srv_sentinel_count - 1" | bc)" -lt "$num_sentinels" ]; then
+  elif [ "$(($srv_sentinel_count - 1))" -lt "$num_sentinels" ]; then
     echo "Sentinel has more sentinels than we expect"
     reflect_scale_in
   fi
