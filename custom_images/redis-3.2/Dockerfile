@@ -8,6 +8,6 @@ ADD https://github.com/18f/redis-sentinel-proxy/releases/download/v1.0.1/redis-s
 
 COPY redis.template.conf sentinel.template.conf /opt/
 
-COPY bootstrap.sh k8s-redis-sentinel-proxy k8s-redis-ha-sentinel k8s-redis-ha-server sword pre-stop.sh /opt/bin/
+COPY bootstrap.sh k8s-redis-sentinel-proxy k8s-redis-ha-sentinel k8s-redis-ha-server pre-stop.sh /opt/bin/
 
 RUN chmod -R +x /opt/bin
