@@ -104,11 +104,7 @@
             "readinessProbe": {
               "exec": {
                 "command": [
-                  "redis-cli",
-                  "-p",
-                  "26379",
-                  "info",
-                  "server"
+                  "/opt/bin/k8s-redis-ha-sentinel-ready"
                 ]
               }
             }
