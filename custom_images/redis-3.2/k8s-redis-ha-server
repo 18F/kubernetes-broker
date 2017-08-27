@@ -26,6 +26,7 @@ run () {
     echo "masterauth $REDIS_PASSWORD";
     echo "requirepass $REDIS_PASSWORD";
     echo "slave-announce-ip $(hostname -i)";
+    echo "min-slaves-to-write ${MIN_SLAVES_TO_WRITE:-0}";
   } >> /opt/redis.conf
 
   reset_all_sentinels
@@ -46,12 +47,16 @@ run () {
   readonly my_host
 
   local master_ip=''
-
   local only_server=true
+
+  local server_count
+  server_count=$(echo "${servers}" | wc -l)
+
   local s
   for s in $servers; do
     # My hostname must be excluded to handle restarts.
-    if [ "$s" = "$my_host" ]; then
+    # Skip if single server and service is not headless; SRV record will not match hostname
+    if [ "$s" = "$my_host" ] || [ "${server_count}" -eq 1 ]; then
       continue
     fi
 

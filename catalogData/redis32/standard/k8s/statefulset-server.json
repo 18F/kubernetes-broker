@@ -14,7 +14,7 @@
     }
   },
   "spec": {
-    "replicas": 3,
+    "replicas": 1,
     "selector": {
       "matchLabels": {
         "component": "server",
@@ -33,21 +33,6 @@
         }
       },
       "spec": {
-        "affinity": {
-          "podAntiAffinity": {
-            "requiredDuringSchedulingIgnoredDuringExecution": [
-              {
-                "topologyKey": "kubernetes.io/hostname",
-                "labelSelector": {
-                  "matchLabels": {
-                    "idx_and_short_serviceid": "$idx_and_short_serviceid",
-                    "component": "server"
-                  }
-                }
-              }
-            ]
-          }
-        },
         "containers": [
           {
             "resources": {
@@ -58,11 +43,11 @@
                 "memory": "512M"
               }
             },
-            "args": [
-              "/opt/redis.conf"
-            ],
             "command": [
               "/opt/bin/k8s-redis-ha-server"
+            ],
+            "args": [
+              "/opt/redis.conf"
             ],
             "env": [
               {
@@ -75,25 +60,21 @@
               },
               {
                 "name": "SENTINEL_HOST",
-                "value": "$idx_and_short_serviceid-sentinel.default"
+                "value": "_"
               },
               {
                 "name": "SENTINEL",
-                "value": "$idx_and_short_serviceid-sentinel"
+                "value": "_"
               },
               {
                 "name": "SENTINEL_PORT",
-                "value": "redis-sentinel"
-              },
-              {
-                "name": "MIN_SLAVES_TO_WRITE",
-                "value": "1"
+                "value": "_"
               },
               { "name": "MANAGED_BY", "value":"TAP" },
               { "name": "REDIS_PASSWORD",
                 "valueFrom": {
                   "secretKeyRef": {
-                    "name": "$short_serviceid-redis-ha-credentials",
+                    "name": "$short_serviceid-redis-credentials",
                     "key": "redis-password"
                   }
                 }
@@ -102,15 +83,6 @@
             "image": "18fgsa/redis:3.2.10",
             "imagePullPolicy": "IfNotPresent",
             "name": "redis-server",
-            "lifecycle": {
-              "preStop": {
-                "exec": {
-                  "command": [
-                    "/opt/bin/pre-stop.sh"
-                  ]
-                }
-              }
-            },
             "ports": [
               {
                 "containerPort": 6379,
