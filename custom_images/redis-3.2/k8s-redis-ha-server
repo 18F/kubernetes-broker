@@ -39,9 +39,12 @@ run () {
 
   # Headless Service allows newly added Redis server to scan all working servers.
   # This enables it to find if it is the first one.
+  set +e
   local servers
-  servers="$(server_domains "$service_domain")"
+  servers="$(server_domains "$service_domain" | grep "${SERVICE}-[0-9]")"
   readonly servers
+  set -e
+
   local my_host
   my_host="$(hostname -f)"
   readonly my_host
@@ -49,14 +52,11 @@ run () {
   local master_ip=''
   local only_server=true
 
-  local server_count
-  server_count=$(echo "${servers}" | wc -l)
-
   local s
   for s in $servers; do
     # My hostname must be excluded to handle restarts.
     # Skip if single server and service is not headless; SRV record will not match hostname
-    if [ "$s" = "$my_host" ] || [ "${server_count}" -eq 1 ]; then
+    if [ "$s" = "$my_host" ]; then
       continue
     fi
 
