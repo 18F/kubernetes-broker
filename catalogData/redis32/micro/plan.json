@@ -1,0 +1,6 @@
+{
+  "id": "eaf5edc4-b85c-4673-b8ed-de5fb93390ac",
+  "name": "micro",
+  "description": "Redis 3.2, persistent storage, 64Mb memory limit",
+  "free": true
+}

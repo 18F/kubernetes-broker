@@ -1,0 +1,126 @@
+{
+  "apiVersion": "apps/v1beta1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "$idx_and_short_serviceid-server",
+    "labels": {
+      "org": "$org",
+      "space": "$space",
+      "catalog_service_id": "$catalog_service_id",
+      "catalog_plan_id": "$catalog_plan_id",
+      "service_id": "$service_id",
+      "idx_and_short_serviceid": "$idx_and_short_serviceid",
+      "managed_by": "TAP"
+    }
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "component": "server",
+        "service_id": "$service_id",
+        "idx_and_short_serviceid": "$idx_and_short_serviceid"
+      }
+    },
+    "serviceName": "$idx_and_short_serviceid-server",
+    "template": {
+      "metadata": {
+        "labels": {
+          "component": "server",
+          "service_id": "$service_id",
+          "idx_and_short_serviceid": "$idx_and_short_serviceid",
+          "managed_by": "TAP"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "resources": {
+              "requests": {
+                "memory": "32m"
+              },
+              "limits": {
+                "memory": "64m"
+              }
+            },
+            "command": [
+              "/opt/bin/k8s-redis-ha-server"
+            ],
+            "args": [
+              "/opt/redis.conf"
+            ],
+            "env": [
+              {
+                "name": "SERVICE",
+                "value": "$idx_and_short_serviceid-server"
+              },
+              {
+                "name": "SERVICE_PORT",
+                "value": "redis-server"
+              },
+              {
+                "name": "SENTINEL_HOST",
+                "value": "_"
+              },
+              {
+                "name": "SENTINEL",
+                "value": "_"
+              },
+              {
+                "name": "SENTINEL_PORT",
+                "value": "_"
+              },
+              { "name": "MANAGED_BY", "value":"TAP" },
+              { "name": "REDIS_PASSWORD",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "name": "$short_serviceid-redis-credentials",
+                    "key": "redis-password"
+                  }
+                }
+              }
+            ],
+            "image": "18fgsa/redis:3.2.10",
+            "imagePullPolicy": "IfNotPresent",
+            "name": "redis-server",
+            "ports": [
+              {
+                "containerPort": 6379,
+                "name": "redis-server"
+              }
+            ],
+            "readinessProbe": {
+              "exec": {
+                "command": [
+                  "/opt/bin/k8s-redis-ha-server-ready"
+                ]
+              }
+            },
+            "volumeMounts": [
+              {
+                "mountPath": "/data",
+                "name": "data"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "data"
+        },
+        "spec": {
+          "accessModes": ["ReadWriteOnce"],
+          "storageClassName": "$storage_class",
+          "resources": {
+            "requests": {
+              "storage": "1Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}
