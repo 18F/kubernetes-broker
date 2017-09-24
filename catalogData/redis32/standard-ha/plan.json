@@ -1,6 +1,6 @@
 {
   "id": "7238138e-722b-11e7-9e57-c30dd7276550",
   "name": "standard-ha",
-  "description": "Redis 3.2 with Redis Sentinel and persistent storage.",
+  "description": "Redis 3.2 with Redis Sentinel, persistent storage, 512Mb memory limit",
   "free": true
 }

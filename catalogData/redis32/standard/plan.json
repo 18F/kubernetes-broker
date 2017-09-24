@@ -1,6 +1,6 @@
 {
   "id": "d544b7d7-1f5a-49b3-b96d-690e7450e43b",
   "name": "standard",
-  "description": "Redis 3.2 with persistent storage.",
+  "description": "Redis 3.2, persistent storage, 512Mb memory limit",
   "free": true
 }
