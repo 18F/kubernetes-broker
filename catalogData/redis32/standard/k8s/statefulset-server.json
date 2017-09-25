@@ -37,7 +37,7 @@
           {
             "resources": {
               "requests": {
-                "memory": "384m"
+                "memory": "384M"
               },
               "limits": {
                 "memory": "512M"
