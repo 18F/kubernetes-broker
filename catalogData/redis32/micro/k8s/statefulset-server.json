@@ -37,10 +37,10 @@
           {
             "resources": {
               "requests": {
-                "memory": "32m"
+                "memory": "32M"
               },
               "limits": {
-                "memory": "64m"
+                "memory": "64M"
               }
             },
             "command": [
