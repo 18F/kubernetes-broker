@@ -762,7 +762,7 @@ func (k *K8Fabricator) GetAllPodsEnvsByServiceId(creds K8sClusterCredentials, sp
 	if err != nil {
 		return result, err
 	}
-	if len(deployments.Items) == 0 && len(sets.Items) == 0{
+	if len(deployments.Items) == 0 && len(sets.Items) == 0 {
 		return result, fmt.Errorf("No deployments or statefulsets associated with the service: %s", service_id)
 	}
 
@@ -852,15 +852,11 @@ func (k *K8Fabricator) getKubernetesClientWithServiceIdSelector(creds K8sCluster
 
 func getSelectorForServiceIdLabel(serviceId string) (string, error) {
 	selector := labels.NewSelector()
-	managedByReq, err := labels.NewRequirement(managedByLabel, selection.Equals, []string{"TAP"})
-	if err != nil {
-		return "", err
-	}
 	serviceIdReq, err := labels.NewRequirement(serviceIdLabel, selection.Equals, []string{serviceId})
 	if err != nil {
 		return "", err
 	}
-	return selector.Add(*managedByReq, *serviceIdReq).String(), nil
+	return selector.Add(*serviceIdReq).String(), nil
 }
 
 func getSelectorForManagedByLabel() (string, error) {
