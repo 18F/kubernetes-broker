@@ -1,0 +1,6 @@
+{
+  "id": "c9265b51-7ff9-4b0f-b0fa-a73d18b2dc25",
+  "name": "medium-ha",
+  "description": "Elasticsearch cluster with three master nodes (3584M memory limit, 1792M heap) and three data nodes (3584M memory limit, 1792M heap, 10G disk)",
+  "free": true
+}
