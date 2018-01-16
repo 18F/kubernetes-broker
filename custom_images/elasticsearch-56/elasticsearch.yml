@@ -1,0 +1,31 @@
+node:
+  data: ${NODE_DATA:true}
+  master: ${NODE_MASTER:true}
+  name: ${HOSTNAME}
+
+# see https://github.com/kubernetes/kubernetes/issues/3595
+bootstrap.memory_lock: ${BOOTSTRAP_MEMORY_LOCK:false}
+
+network.host: 0.0.0.0
+
+discovery:
+  zen:
+    ping.unicast.hosts: ${DISCOVERY_SERVICE:discovery}
+    minimum_master_nodes: ${MINIMUM_MASTER_NODES:2}
+
+# see https://github.com/elastic/elasticsearch-definitive-guide/pull/679
+processors: ${PROCESSORS:}
+
+# avoid split-brain w/ a minimum consensus of two masters plus a data node
+gateway:
+  expected_master_nodes: ${EXPECTED_MASTER_NODES:2}
+  expected_data_nodes: ${EXPECTED_DATA_NODES:1}
+  recover_after_time: ${RECOVER_AFTER_TIME:5m}
+  recover_after_master_nodes: ${RECOVER_AFTER_MASTER_NODES:2}
+  recover_after_data_nodes: ${RECOVER_AFTER_DATA_NODES:1}
+
+xpack:
+  ml.enabled: ${XPACK_ML_ENABLED:false}
+  monitoring.enabled: ${XPACK_MONITORING_ENABLED:false}
+  security.enabled: ${XPACK_SECURITY_ENABLED:false}
+  watcher.enabled: ${XPACK_WATCHER_ENABLED:false}

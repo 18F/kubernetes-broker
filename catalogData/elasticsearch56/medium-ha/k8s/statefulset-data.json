@@ -1,0 +1,169 @@
+{
+  "kind": "StatefulSet",
+  "apiVersion": "apps/v1beta1",
+  "metadata": {
+    "name": "$idx_and_short_serviceid-data",
+    "labels": {
+      "org": "$org",
+      "space": "$space",
+      "catalog_service_id": "$catalog_service_id",
+      "catalog_plan_id": "$catalog_plan_id",
+      "service_id": "$service_id",
+      "idx_and_short_serviceid": "$idx_and_short_serviceid",
+      "managed_by": "TAP",
+      "component": "data"
+    }
+  },
+  "spec": {
+    "serviceName": "$idx_and_short_serviceid-data",
+    "replicas": 3,
+    "selector": {
+      "matchLabels" : {
+        "service_id": "$service_id",
+        "idx_and_short_serviceid": "$idx_and_short_serviceid",
+        "component": "data"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "service_id": "$service_id",
+          "idx_and_short_serviceid": "$idx_and_short_serviceid",
+          "managed_by": "TAP",
+          "component": "data"
+        }
+      },
+      "spec": {
+        "serviceAccountName": "$idx_and_short_serviceid",
+        "affinity": {
+          "podAntiAffinity": {
+            "requiredDuringSchedulingIgnoredDuringExecution": [
+              {
+                "topologyKey": "kubernetes.io/hostname",
+                "labelSelector": {
+                  "matchLabels": {
+                    "idx_and_short_serviceid": "$idx_and_short_serviceid",
+                    "component": "data"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "initContainers": [
+          {
+            "name": "sysctl",
+            "image": "busybox",
+            "imagePullPolicy": "IfNotPresent",
+            "command": ["/bin/sh"],
+            "args": ["-c", "sysctl -w vm.max_map_count=262144 && sysctl -w vm.swappiness=1"],
+            "securityContext": {
+              "privileged": true
+            }
+          },
+          {
+            "name": "chown",
+            "image": "jmcarp/elasticsearch:5.6.5",
+            "imagePullPolicy": "IfNotPresent",
+            "command": [
+              "/bin/bash",
+              "-c",
+              "chown -R elasticsearch:elasticsearch /usr/share/elasticsearch/data && chown -R elasticsearch:elasticsearch /usr/share/elasticsearch/logs"
+            ],
+            "volumeMounts": [
+              {
+                "name": "data",
+                "mountPath": "/usr/share/elasticsearch/data"
+              }
+            ]
+          }
+        ],
+        "containers": [
+          {
+            "name": "elasticsearch-data",
+            "image": "jmcarp/elasticsearch:5.6.5",
+            "securityContext": {
+              "capabilities": {
+                "add": ["IPC_LOCK", "SYS_RESOURCE"]
+              }
+            },
+            "resources": {
+              "requests": {
+                "memory": "1792M",
+                "cpu": "0"
+              },
+              "limits": {
+                "memory": "3584M",
+                "cpu": 1
+              }
+            },
+            "ports": [
+              {
+                "name": "transport",
+                "containerPort": 9300
+              }
+            ],
+            "env": [
+              {
+                "name": "DISCOVERY_SERVICE",
+                "value": "$idx_and_short_serviceid-master.default.svc.cluster.local"
+              },
+              {
+                "name": "NODE_MASTER",
+                "value": "false"
+              },
+              {
+                "name": "PROCESSORS",
+                "valueFrom": {
+                  "resourceFieldRef": {
+                    "resource": "limits.cpu"
+                  }
+                }
+              },
+              {
+                "name": "ES_JAVA_OPTS",
+                "value": "-Djava.net.preferIPv4Stack=true -Xms1792m -Xmx1792m"
+              },
+              {
+                "name": "MANAGED_BY",
+                "value":"TAP"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "data",
+                "mountPath": "/usr/share/elasticsearch/data"
+              }
+            ],
+            "lifecycle": {
+              "preStop": {
+                "exec": {
+                  "command": ["/bin/bash", "/pre-stop-hook.sh"]
+                }
+              }
+            },
+            "imagePullPolicy": "IfNotPresent"
+          }
+        ],
+        "restartPolicy": "Always",
+        "dnsPolicy": "ClusterFirst"
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "data"
+        },
+        "spec": {
+          "accessModes": ["ReadWriteOnce"],
+          "storageClassName": "$storage_class",
+          "resources": {
+            "requests": {
+              "storage": "10Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+}
