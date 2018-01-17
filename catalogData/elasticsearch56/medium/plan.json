@@ -1,0 +1,6 @@
+{
+  "id": "75d0b025-d2c7-49d5-abaa-c1a938d51b3c",
+  "name": "medium",
+  "description": "Elasticsearch instance with 3GB of RAM and 1 AWS vCPU",
+  "free": true
+}
