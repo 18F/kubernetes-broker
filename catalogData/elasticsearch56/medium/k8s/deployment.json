@@ -1,8 +1,8 @@
 {
-  "kind": "StatefulSet",
-  "apiVersion": "apps/v1beta1",
+  "kind": "Deployment",
+  "apiVersion": "extensions/v1beta1",
   "metadata": {
-    "name": "$idx_and_short_serviceid-master",
+    "name": "$idx_and_short_serviceid",
     "labels": {
       "org": "$org",
       "space": "$space",
@@ -10,18 +10,15 @@
       "catalog_plan_id": "$catalog_plan_id",
       "service_id": "$service_id",
       "idx_and_short_serviceid": "$idx_and_short_serviceid",
-      "managed_by": "TAP",
-      "component": "master"
+      "managed_by": "TAP"
     }
   },
   "spec": {
-    "serviceName": "$idx_and_short_serviceid-master",
-    "replicas": 3,
+    "replicas": 1,
     "selector": {
       "matchLabels" : {
         "service_id": "$service_id",
-        "idx_and_short_serviceid": "$idx_and_short_serviceid",
-        "component": "master"
+        "idx_and_short_serviceid": "$idx_and_short_serviceid"
       }
     },
     "template": {
@@ -29,27 +26,10 @@
         "labels": {
           "service_id": "$service_id",
           "idx_and_short_serviceid": "$idx_and_short_serviceid",
-          "managed_by": "TAP",
-          "component": "master"
+          "managed_by": "TAP"
         }
       },
       "spec": {
-        "serviceAccountName": "$idx_and_short_serviceid",
-        "affinity": {
-          "podAntiAffinity": {
-            "requiredDuringSchedulingIgnoredDuringExecution": [
-              {
-                "topologyKey": "kubernetes.io/hostname",
-                "labelSelector": {
-                  "matchLabels": {
-                    "idx_and_short_serviceid": "$idx_and_short_serviceid",
-                    "component": "master"
-                  }
-                }
-              }
-            ]
-          }
-        },
         "initContainers": [
           {
             "name": "sysctl",
@@ -72,7 +52,7 @@
             ],
             "volumeMounts": [
               {
-                "name": "data",
+                "name": "elasticsearch-persistent-storage",
                 "mountPath": "/usr/share/elasticsearch/data"
               }
             ]
@@ -107,13 +87,8 @@
             "imagePullPolicy": "IfNotPresent"
           },
           {
-            "name": "elasticsearch-master",
+            "name": "elasticsearch",
             "image": "jmcarp/elasticsearch:5.6.5",
-            "securityContext": {
-              "capabilities": {
-                "add": ["IPC_LOCK", "SYS_RESOURCE"]
-              }
-            },
             "resources": {
               "requests": {
                 "memory": "1792M",
@@ -122,6 +97,11 @@
               "limits": {
                 "memory": "3584M",
                 "cpu": 1
+              }
+            },
+            "securityContext": {
+              "capabilities": {
+                "add": ["IPC_LOCK", "SYS_RESOURCE"]
               }
             },
             "ports": [
@@ -140,8 +120,24 @@
                 "value": "$idx_and_short_serviceid-master.default.svc.cluster.local"
               },
               {
-                "name": "NODE_DATA",
-                "value": "false"
+                "name": "MINIMUM_MASTER_NODES",
+                "value": "1"
+              },
+              {
+                "name": "EXPECTED_MASTER_NODES",
+                "value": "1"
+              },
+              {
+                "name": "EXPECTED_DATA_NODES",
+                "value": "1"
+              },
+              {
+                "name": "RECOVER_AFTER_MASTER_NODES",
+                "value": "1"
+              },
+              {
+                "name": "RECOVER_AFTER_DATA_NODES",
+                "value": "1"
               },
               {
                 "name": "PROCESSORS",
@@ -162,32 +158,24 @@
             ],
             "volumeMounts": [
               {
-                "name": "data",
+                "name": "elasticsearch-persistent-storage",
                 "mountPath": "/usr/share/elasticsearch/data"
               }
             ],
             "imagePullPolicy": "IfNotPresent"
           }
         ],
+        "volumes": [
+          {
+            "name": "elasticsearch-persistent-storage",
+            "persistentVolumeClaim": {
+              "claimName": "$idx_and_short_serviceid"
+            }
+          }
+        ],
         "restartPolicy": "Always",
         "dnsPolicy": "ClusterFirst"
       }
-    },
-    "volumeClaimTemplates": [
-      {
-        "metadata": {
-          "name": "data"
-        },
-        "spec": {
-          "accessModes": ["ReadWriteOnce"],
-          "storageClassName": "$storage_class",
-          "resources": {
-            "requests": {
-              "storage": "1Gi"
-            }
-          }
-        }
-      }
-    ]
+    }
   }
 }
