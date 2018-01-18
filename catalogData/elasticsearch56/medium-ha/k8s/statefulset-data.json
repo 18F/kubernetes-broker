@@ -63,7 +63,7 @@
           },
           {
             "name": "chown",
-            "image": "jmcarp/elasticsearch:5.6.5",
+            "image": "18fgsa/k8s-elasticsearch:5.6.5",
             "imagePullPolicy": "IfNotPresent",
             "command": [
               "/bin/bash",
@@ -81,7 +81,7 @@
         "containers": [
           {
             "name": "elasticsearch-data",
-            "image": "jmcarp/elasticsearch:5.6.5",
+            "image": "18fgsa/k8s-elasticsearch:5.6.5",
             "securityContext": {
               "capabilities": {
                 "add": ["IPC_LOCK", "SYS_RESOURCE"]
