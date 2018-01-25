@@ -88,7 +88,7 @@
           },
           {
             "name": "elasticsearch",
-            "image": "18fgsa/k8s-elasticsearch:5.6.5",
+            "image": "jmcarp/k8s-elasticsearch:5.6.5",
             "resources": {
               "requests": {
                 "memory": "1792M",
@@ -152,6 +152,14 @@
                 "value": "-Djava.net.preferIPv4Stack=true -Xms1792m -Xmx1792m"
               },
               {
+                "name": "NUMBER_OF_SHARDS",
+                "value": "1"
+              },
+              {
+                "name": "NUMBER_OF_REPLICAS",
+                "value": "0"
+              },
+              {
                 "name": "MANAGED_BY",
                 "value": "TAP"
               }
@@ -162,7 +170,14 @@
                 "mountPath": "/usr/share/elasticsearch/data"
               }
             ],
-            "imagePullPolicy": "IfNotPresent"
+            "imagePullPolicy": "IfNotPresent",
+            "lifecycle": {
+              "postStart": {
+                "exec": {
+                  "command": ["/setup-shards.sh"]
+                }
+              }
+            }
           }
         ],
         "volumes": [

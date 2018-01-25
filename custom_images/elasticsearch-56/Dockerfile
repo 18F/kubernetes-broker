@@ -30,6 +30,7 @@ RUN set -ex; \
 
 COPY entrypoint.sh /entrypoint.sh
 COPY pre-stop-hook.sh /pre-stop-hook.sh
+COPY setup-shards.sh /setup-shards.sh
 COPY elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
 COPY log4j2.properties /usr/share/elasticsearch/config/log4j2.properties
 

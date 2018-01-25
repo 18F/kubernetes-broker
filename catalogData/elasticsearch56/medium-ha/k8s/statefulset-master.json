@@ -63,7 +63,7 @@
           },
           {
             "name": "chown",
-            "image": "18fgsa/k8s-elasticsearch:5.6.5",
+            "image": "jmcarp/k8s-elasticsearch:5.6.5",
             "imagePullPolicy": "IfNotPresent",
             "command": [
               "/bin/bash",
@@ -156,6 +156,14 @@
                 "value": "-Djava.net.preferIPv4Stack=true -Xms1792m -Xmx1792m"
               },
               {
+                "name": "NUMBER_OF_SHARDS",
+                "value": "3"
+              },
+              {
+                "name": "NUMBER_OF_REPLICAS",
+                "value": "2"
+              },
+              {
                 "name": "MANAGED_BY",
                 "value": "TAP"
               }
@@ -166,7 +174,14 @@
                 "mountPath": "/usr/share/elasticsearch/data"
               }
             ],
-            "imagePullPolicy": "IfNotPresent"
+            "imagePullPolicy": "IfNotPresent",
+            "lifecycle": {
+              "postStart": {
+                "exec": {
+                  "command": ["/setup-shards.sh"]
+                }
+              }
+            }
           }
         ],
         "restartPolicy": "Always",
