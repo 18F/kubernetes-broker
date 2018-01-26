@@ -33,4 +33,6 @@ COPY pre-stop-hook.sh /pre-stop-hook.sh
 COPY elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
 COPY log4j2.properties /usr/share/elasticsearch/config/log4j2.properties
 
+RUN bin/elasticsearch-plugin install repository-s3
+
 ENTRYPOINT ["/entrypoint.sh"]
