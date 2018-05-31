@@ -136,6 +136,10 @@
             ],
             "env": [
               {
+                "name": "CLUSTER_NAME",
+                "value": "$service_id"
+              },
+              {
                 "name": "DISCOVERY_SERVICE",
                 "value": "$idx_and_short_serviceid-master.default.svc.cluster.local"
               },
