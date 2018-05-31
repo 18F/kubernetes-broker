@@ -3,6 +3,9 @@ node:
   master: ${NODE_MASTER:true}
   name: ${HOSTNAME}
 
+cluster:
+  name: ${CLUSTER_NAME:elasticsearch}
+
 # see https://github.com/kubernetes/kubernetes/issues/3595
 bootstrap.memory_lock: ${BOOTSTRAP_MEMORY_LOCK:false}
 
