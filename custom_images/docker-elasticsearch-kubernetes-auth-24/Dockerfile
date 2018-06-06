@@ -16,6 +16,9 @@ RUN /elasticsearch/bin/plugin install https://raw.githubusercontent.com/elasticf
 RUN /elasticsearch/bin/plugin install https://download.elastic.co/elasticsearch/release/org/elasticsearch/plugin/cloud-aws/2.4.1/cloud-aws-2.4.1.zip
 ADD logging.aws.yml /elasticsearch/config/logging.aws.yml
 
+# Install mapper attachments plugin
+RUN bin/plugin install mapper-attachments
+
 # Add elasticfence settings to config file
 ADD elasticfence.yml /elasticsearch/config/elasticfence.yml
 RUN cat /elasticsearch/config/elasticfence.yml >> /elasticsearch/config/elasticsearch.yml
