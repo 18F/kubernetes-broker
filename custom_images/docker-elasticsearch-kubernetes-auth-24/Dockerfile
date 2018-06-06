@@ -17,7 +17,7 @@ RUN /elasticsearch/bin/plugin install https://download.elastic.co/elasticsearch/
 ADD logging.aws.yml /elasticsearch/config/logging.aws.yml
 
 # Install mapper attachments plugin
-RUN bin/plugin install mapper-attachments
+RUN /elasticsearch/bin/plugin install mapper-attachments
 
 # Add elasticfence settings to config file
 ADD elasticfence.yml /elasticsearch/config/elasticfence.yml
