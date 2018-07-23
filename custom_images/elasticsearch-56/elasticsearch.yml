@@ -26,9 +26,3 @@ gateway:
   recover_after_time: ${RECOVER_AFTER_TIME:5m}
   recover_after_master_nodes: ${RECOVER_AFTER_MASTER_NODES:2}
   recover_after_data_nodes: ${RECOVER_AFTER_DATA_NODES:1}
-
-xpack:
-  ml.enabled: ${XPACK_ML_ENABLED:false}
-  monitoring.enabled: ${XPACK_MONITORING_ENABLED:false}
-  security.enabled: ${XPACK_SECURITY_ENABLED:false}
-  watcher.enabled: ${XPACK_WATCHER_ENABLED:false}
