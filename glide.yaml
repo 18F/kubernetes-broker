@@ -9,6 +9,7 @@ import:
 - package: github.com/gocraft/web
   version: v1.1
 - package: github.com/golang/mock
+  version: v1.2.0
   subpackages:
   - gomock
 - package: github.com/hashicorp/consul
