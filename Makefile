@@ -74,9 +74,11 @@ deps_fetch_specific: bin/govendor
 	exit 1 ;\
 	fi
 	@echo "Fetchinf specific deps in newest versions"
-	$(GOBIN)/govendor fetch -v github.com/golang/mock/mockgen@v1.0.0
 	
 	$(GOBIN)/govendor fetch -v $(DEP_URL)
+
+deps_fetch_mockgen:
+	$(GOBIN)/govendor fetch -v github.com/golang/mock/mockgen@v1.2.0
 
 deps_update: verify_gopath
 	$(MAKE) bin/govendor
@@ -107,12 +109,15 @@ logs:
 update:
 	./scripts/cf-updatesvc.sh
 
-mock_update: bin/gomock
-	$(GOBIN)/mockgen -source=app/tap/cfapi.go -package=main -destination=app/tap/cfapi_mock_test.go
-	$(GOBIN)/mockgen -source=k8s/k8sfabricator.go -package=k8s -destination=k8s/k8sfabricator_mock.go
-	$(GOBIN)/mockgen -source=k8s/k8screator_rest_api.go -package=k8s -destination=k8s/k8screator_rest_api_mock.go
-	$(GOBIN)/mockgen -source=state/state.go -package=state -destination=state/state_mock.go
-	$(GOBIN)/mockgen -source=consul/consul_service.go -package=consul -destination=consul/consul_service_mock.go
+mock_update: bin/govendor deps_fetch_mockgen
+	cd vendor/github.com/golang/mock/mockgen && go build
+	cd ../../../../
+	PATH=$(pwd)/vendor/github.com/golang/mock/mockgen:${PATH}
+	mockgen -source=app/tap/cfapi.go -package=main -destination=app/tap/cfapi_mock_test.go
+	mockgen -source=k8s/k8sfabricator.go -package=k8s -destination=k8s/k8sfabricator_mock.go
+	mockgen -source=k8s/k8screator_rest_api.go -package=k8s -destination=k8s/k8screator_rest_api_mock.go
+	mockgen -source=state/state.go -package=state -destination=state/state_mock.go
+	mockgen -source=consul/consul_service.go -package=consul -destination=consul/consul_service_mock.go
 
 tests: verify_gopath mock_update
 	go test --cover $(APP_DIR_LIST)
