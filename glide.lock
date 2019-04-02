@@ -1,6 +1,8 @@
-hash: de770a3ead6cb1b56ec1f3cff64ea0f26cd5faa8af76114ae3c43b4de42308dc
-updated: 2017-07-19T21:51:05.584893378-04:00
+hash: 84da167d32b4cd8012da9c3dc8e6c8c4b0e37b3f8fcf82dc8808def31ea94476
+updated: 2019-04-01T17:27:03.731666-04:00
 imports:
+- name: github.com/armon/go-metrics
+  version: f0300d1749da6fa982027e449ec0c7a145510c3c
 - name: github.com/cloudfoundry-community/go-cfenv
   version: f920e9562d5f951cbf11785728f67258c38a10d0
 - name: github.com/davecgh/go-spew
@@ -44,7 +46,7 @@ imports:
 - name: github.com/golang/glog
   version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/mock
-  version: 13f360950a79f5864a972c786a10a50e44b69541
+  version: 51421b967af1f557f93a59e0057aaf15ca02e29c
   subpackages:
   - gomock
 - name: github.com/golang/protobuf
@@ -68,11 +70,17 @@ imports:
   subpackages:
   - api
 - name: github.com/hashicorp/go-cleanhttp
-  version: 3573b8b52aa7b37b9358d966a898feb387f62437
+  version: eda1e5db218aad1db63ca4642c8906b26bcf2744
+- name: github.com/hashicorp/go-immutable-radix
+  version: 27df80928bb34bb1b0d6d0e01b9e679902e7a6b5
 - name: github.com/hashicorp/go-rootcerts
-  version: 6bb64b370b90e7ef1fa532be9e591a81c3493e00
+  version: 63503fb4e1eca22f9ae0f90b49c5d5538a0e87eb
+- name: github.com/hashicorp/golang-lru
+  version: a0d98a5f288019575c6d1f4bb1573fef2d1fcdc4
+  subpackages:
+  - simplelru
 - name: github.com/hashicorp/serf
-  version: bbeddf0b3ab3072a60525afbd6b6f47d33839eee
+  version: e516ab3e97c38fc10fb0dbde0437751823d08300
   subpackages:
   - coordinate
 - name: github.com/juju/ratelimit
@@ -86,9 +94,9 @@ imports:
   - jlexer
   - jwriter
 - name: github.com/mitchellh/go-homedir
-  version: b8bc1bf767474819792c23f32d8286a45736f1c6
+  version: af06845cf3004701891bf4fdb884bfe4920b3727
 - name: github.com/mitchellh/mapstructure
-  version: d0303fe809921458f417bcf828397a65db30a7e4
+  version: 3536a929edddb9a5b34bd6861dc4a9647cb459fe
 - name: github.com/nu7hatch/gouuid
   version: 179d4d0c4d8d407a32af483c2354df1d2c91e6c3
 - name: github.com/op/go-logging
@@ -107,12 +115,13 @@ imports:
   version: f2499483f923065a842d38eb4c7f1927e6fc6e6d
   subpackages:
   - context
+  - context/ctxhttp
   - http2
   - http2/hpack
   - idna
   - lex/httplex
 - name: golang.org/x/oauth2
-  version: a6bd8cefa1811bd24b86f8902872e4e8225f74c4
+  version: c85d3e98c914e3a33234ad863dcbff5dbc425bb8
   subpackages:
   - clientcredentials
   - internal
@@ -130,7 +139,7 @@ imports:
   - unicode/norm
   - width
 - name: google.golang.org/appengine
-  version: 4f7eeb5305a4ba1966344836ba4af9996b7b4e05
+  version: 54a98f90d1c46b7731eb8fb305d2a321c30ef610
   subpackages:
   - internal
   - internal/base
@@ -173,9 +182,6 @@ imports:
   - pkg/api/errors
   - pkg/api/meta
   - pkg/api/resource
-  - pkg/apimachinery
-  - pkg/apimachinery/announced
-  - pkg/apimachinery/registered
   - pkg/apis/meta/v1
   - pkg/apis/meta/v1/unstructured
   - pkg/apis/meta/v1alpha1
@@ -270,21 +276,17 @@ imports:
   - util/cert
   - util/flowcontrol
   - util/integer
-- name: k8s.io/kubernetes
-  version: 8e5584fe95c01f2b3a9d60fcccef8fadbb4c8f88
-  subpackages:
-  - pkg/api
-  - pkg/apis/extensions
 testImports:
 - name: github.com/gopherjs/gopherjs
-  version: 2b1d432c8a82c9bff0b0baffaeb3ec6e92974112
+  version: bb2674552d8fc183605e16acbf9e8f0a0b031dee
   subpackages:
   - js
 - name: github.com/jtolds/gls
-  version: 77f18212c9c7edc9bd6a33d383a7b545ce62f064
+  version: b4936e06046bbecbb94cae9c18127ebe510a2cb9
 - name: github.com/smartystreets/assertions
-  version: 4ea54c1f28ad3ae597e76607dea3871fa177e263
+  version: f487f9de1cd36ebab28235b9373028812fb47cbd
   subpackages:
+  - internal/go-diff/diffmatchpatch
   - internal/go-render/render
   - internal/oglematchers
 - name: github.com/smartystreets/goconvey
