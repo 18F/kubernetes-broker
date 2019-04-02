@@ -60,7 +60,6 @@ bin/goconvey: verify_gopath
 	go get -v -u github.com/smartystreets/goconvey
 
 bin/gomock: verify_gopath
-	go get -u github.com/kardianos/govendor
 	govendor init
 	govendor add +external
 	govendor get -u github.com/golang/mock/mockgen@v1.2.0
