@@ -60,10 +60,7 @@ bin/goconvey: verify_gopath
 	go get -v -u github.com/smartystreets/goconvey
 
 bin/gomock: verify_gopath
-	govendor init
-	govendor add +external
-	govendor get -u github.com/golang/mock/mockgen@v1.2.0
-	govendor install +vendor
+	go get -v -u github.com/golang/mock/mockgen
 
 deps_fetch_newest: bin/govendor
 	$(GOBIN)/govendor remove +all
@@ -77,6 +74,7 @@ deps_fetch_specific: bin/govendor
 	exit 1 ;\
 	fi
 	@echo "Fetchinf specific deps in newest versions"
+	$(GOBIN)/govendor fetch -v github.com/golang/mock/mockgen@v1.0.0
 	
 	$(GOBIN)/govendor fetch -v $(DEP_URL)
 
