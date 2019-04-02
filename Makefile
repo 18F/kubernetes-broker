@@ -60,7 +60,7 @@ bin/goconvey: verify_gopath
 	go get -v -u github.com/smartystreets/goconvey
 
 bin/gomock: verify_gopath
-	go get -v -u github.com/golang/mock/mockgen
+	go get -v -u github.com/golang/mock/mockgen@v1.2.0
 
 deps_fetch_newest: bin/govendor
 	$(GOBIN)/govendor remove +all
