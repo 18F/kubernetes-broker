@@ -64,6 +64,7 @@ bin/gomock: verify_gopath
 	govendor init
 	govendor add +external
 	govendor get -u github.com/golang/mock/mockgen@v1.2.0
+	govendor install +vendor
 
 deps_fetch_newest: bin/govendor
 	$(GOBIN)/govendor remove +all
