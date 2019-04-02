@@ -112,7 +112,7 @@ update:
 mock_update: bin/govendor deps_fetch_mockgen
 	cd vendor/github.com/golang/mock/mockgen && go build
 	cd ../../../../
-	PATH=$(pwd)/vendor/github.com/golang/mock/mockgen:${PATH}
+	PATH=$(PWD)/vendor/github.com/golang/mock/mockgen:${PATH}
 	mockgen -source=app/tap/cfapi.go -package=main -destination=app/tap/cfapi_mock_test.go
 	mockgen -source=k8s/k8sfabricator.go -package=k8s -destination=k8s/k8sfabricator_mock.go
 	mockgen -source=k8s/k8screator_rest_api.go -package=k8s -destination=k8s/k8screator_rest_api_mock.go
