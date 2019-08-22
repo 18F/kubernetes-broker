@@ -16,16 +16,32 @@ func Acos(x float64) float64 {
 	return math.Call("acos", x).Float()
 }
 
+func Acosh(x float64) float64 {
+	return math.Call("acosh", x).Float()
+}
+
 func Asin(x float64) float64 {
 	return math.Call("asin", x).Float()
+}
+
+func Asinh(x float64) float64 {
+	return math.Call("asinh", x).Float()
 }
 
 func Atan(x float64) float64 {
 	return math.Call("atan", x).Float()
 }
 
+func Atanh(x float64) float64 {
+	return math.Call("atanh", x).Float()
+}
+
 func Atan2(y, x float64) float64 {
 	return math.Call("atan2", y, x).Float()
+}
+
+func Cbrt(x float64) float64 {
+	return math.Call("cbrt", x).Float()
 }
 
 func Ceil(x float64) float64 {
@@ -47,8 +63,12 @@ func Cosh(x float64) float64 {
 	return math.Call("cosh", x).Float()
 }
 
-func Dim(x, y float64) float64 {
-	return dim(x, y)
+func Erf(x float64) float64 {
+	return erf(x)
+}
+
+func Erfc(x float64) float64 {
+	return erfc(x)
 }
 
 func Exp(x float64) float64 {
@@ -99,16 +119,13 @@ func IsNaN(f float64) (is bool) {
 }
 
 func Ldexp(frac float64, exp int) float64 {
-	if frac == 0 {
-		return frac
+	if -1024 < exp && exp < 1024 { // Use Math.pow for small exp values where it's viable. For performance.
+		if frac == 0 {
+			return frac
+		}
+		return frac * math.Call("pow", 2, exp).Float()
 	}
-	if exp >= 1024 {
-		return frac * math.Call("pow", 2, 1023).Float() * math.Call("pow", 2, exp-1023).Float()
-	}
-	if exp <= -1024 {
-		return frac * math.Call("pow", 2, -1023).Float() * math.Call("pow", 2, exp+1023).Float()
-	}
-	return frac * math.Call("pow", 2, exp).Float()
+	return ldexp(frac, exp)
 }
 
 func Log(x float64) float64 {
@@ -200,7 +217,7 @@ func Trunc(x float64) float64 {
 	if x == posInf || x == negInf || x != x || 1/x == negInf {
 		return x
 	}
-	return float64(int(x))
+	return Copysign(float64(int(x)), x)
 }
 
 var buf struct {

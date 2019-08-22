@@ -240,7 +240,7 @@ func (c *CfApi) UpdateServiceBroker() (ServiceBroker, error) {
 
 	if foundBrokers.TotalResult != 1 || len(foundBrokers.Resources) != 1 {
 		return result, errors.New(fmt.Sprintf("Can't Update broker - number of found brokers is not equal to 1."+
-			"Broker name: %s, No of found results: %n", currentBrokerName, foundBrokers.TotalResult))
+			"Broker name: %s, No of found results: %d", currentBrokerName, foundBrokers.TotalResult))
 	}
 
 	body := fmt.Sprintf(
