@@ -1,5 +1,9 @@
 # Kubernetes-broker
 
+## Deprecated
+
+This release is no longer maintained or used, and is retained for reference purposes only
+
 ## A better way of deploying clustered services on TAP
 
 This repo contains an broker application, responsible for communication between CloudFoundry and Kubernetes cluster, in order to create Marketplace Services on the Kubernetes existing side-to-side with TAP.
